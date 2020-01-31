@@ -1,5 +1,5 @@
 FROM postgres:latest
-COPY init.sql /docker-entrypoint-initdb.d/
+COPY sql/init.sql /docker-entrypoint-initdb.d/
 
 
     

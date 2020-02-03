@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+
 CREATE TABLE public.Image (
     ID uuid PRIMARY KEY NOT NULL,
     PathString Varchar(255) NOT NULL,
@@ -17,13 +20,14 @@ CREATE TABLE public.User (
     ID uuid PRIMARY KEY NOT NULL,
     Username Varchar(50) NOT NULL,
     Password Varchar(50) NOT NULL,
-    Name Varchar(30) NOT NULL,
-    Surname Varchar(30) NOT NULL,
+    Name Varchar(64) NOT NULL,
+    Surname Varchar(64) NOT NULL,
     Email Varchar(50) NOT NULL,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
 CREATE TABLE public.Advertisement (
     ID uuid PRIMARY KEY NOT NULL,
     UserID uuid NOT NULL,
@@ -209,3 +213,85 @@ CREATE TABLE public.Event (
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
+CREATE OR REPLACE FUNCTION registeruser(
+    var_username varchar(50),
+    var_password varchar(50),
+    var_name varchar(64),
+    var_surname varchar(64),
+    var_email varchar(50),
+    OUT res_created boolean,
+    OUT ret_username varchar(64),
+    OUT ret_user_id uuid)
+    LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    userid uuid := uuid_generate_v4();
+BEGIN
+    INSERT INTO public.User(ID, Username, Password, Name, Surname, Email, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (userid, var_username, var_password, var_name, var_surname, var_email, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    
+    res_created := true;
+    ret_username := var_username;
+    ret_user_id := userid;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.getuser(
+	var_userid uuid)
+    RETURNS TABLE(userid uuid, username character varying, name character varying, surname character varying, email character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.username, u.name, u.surname, u.email
+    FROM public.User u
+    WHERE var_userid = u.id;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.updateuser(
+	var_userid uuid,
+	var_username character varying,
+	var_password character varying,
+	var_name character varying,
+	var_surname character varying,
+	var_email character varying,
+	OUT res_updated boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    UPDATE public.User
+    SET username = var_username, password = var_password, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP 
+    WHERE var_userid = id;
+    res_updated := true;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.deleteuser(
+	var_userid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    UPDATE public.User
+    SET isdeleted = true 
+    WHERE var_userid = id;
+    res_deleted := true;
+END;
+$BODY$;

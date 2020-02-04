@@ -289,9 +289,32 @@ CREATE OR REPLACE FUNCTION public.deleteuser(
 AS $BODY$
 DECLARE
 BEGIN
-    UPDATE public.User
-    SET isdeleted = true 
-    WHERE var_userid = id;
-    res_deleted := true;
+    IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid) THEN
+        UPDATE public.User
+        SET isdeleted = true 
+        WHERE var_userid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.loginuser(
+	var_username varchar(50),
+	var_password varchar(50)
+)
+    RETURNS TABLE(userid uuid, username character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.username
+    FROM public.User u
+    WHERE var_username = u.username AND var_password = u.password;
 END;
 $BODY$;

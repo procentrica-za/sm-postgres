@@ -214,26 +214,45 @@ CREATE TABLE public.Event (
     ModifiedDateTime timestamp
 );
 
-CREATE OR REPLACE FUNCTION registeruser(
-    var_username varchar(50),
-    var_password varchar(50),
-    var_name varchar(64),
-    var_surname varchar(64),
-    var_email varchar(50),
-    OUT res_created boolean,
-    OUT ret_username varchar(64),
-    OUT ret_user_id uuid)
+CREATE OR REPLACE FUNCTION public.registeruser(
+	var_username character varying,
+	var_password character varying,
+	var_name character varying,
+	var_surname character varying,
+	var_email character varying,
+	OUT res_created boolean,
+	OUT ret_username character varying,
+	OUT ret_user_id uuid,
+	OUT ret_error character varying)
+    RETURNS record
     LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
 AS $BODY$
 DECLARE
     userid uuid := uuid_generate_v4();
 BEGIN
-    INSERT INTO public.User(ID, Username, Password, Name, Surname, Email, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (userid, var_username, var_password, var_name, var_surname, var_email, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
-    
-    res_created := true;
-    ret_username := var_username;
-    ret_user_id := userid;
+	IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username) THEN
+		res_created := false;
+		ret_username := '';
+		ret_user_id := '00000000-0000-0000-0000-000000000000';
+		ret_error := 'This Username Already Exists!';
+			ELSE IF EXISTS (SELECT 1 FROM public.user u WHERE u.email = var_email) THEN
+				res_created := false;
+				ret_username := '';
+				ret_user_id := '00000000-0000-0000-0000-000000000000';
+				ret_error := 'This Email Already Exists!';
+					ELSE
+						INSERT INTO public.User(ID, Username, Password, Name, Surname, Email, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    					VALUES (userid, var_username, var_password, var_name, var_surname, var_email, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    					res_created := true;
+    					ret_username := var_username;
+    					ret_user_id := userid;
+						ret_error := 'User Successfully Created!';
+    				END IF;
+			END IF;
 END;
 $BODY$;
 
@@ -260,8 +279,9 @@ CREATE OR REPLACE FUNCTION public.updateuser(
 	var_name character varying,
 	var_surname character varying,
 	var_email character varying,
-	OUT res_updated boolean)
-    RETURNS boolean
+	OUT res_updated boolean,
+	OUT res_error character varying)
+    RETURNS record
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -270,10 +290,20 @@ CREATE OR REPLACE FUNCTION public.updateuser(
 AS $BODY$
 DECLARE
 BEGIN
-    UPDATE public.User
-    SET username = var_username, password = var_password, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP 
-    WHERE var_userid = id;
-    res_updated := true;
+IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id != var_userid) THEN
+	res_updated := false;
+	res_error := 'This Username Already Exists!';
+		ELSE IF (SELECT 1 FROM public.user u WHERE u.email = var_email AND u.id != var_userid) THEN
+			res_updated := false;
+			res_error := 'This Email Already Exists!';
+				ELSE
+    				UPDATE public.User
+   				 	SET username = var_username, password = var_password, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP 
+    				WHERE var_userid = id;
+    				res_updated := true;
+					res_error := 'User Successfully Updated';
+				END IF;
+		END IF;
 END;
 $BODY$;
 

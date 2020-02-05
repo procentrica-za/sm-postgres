@@ -348,3 +348,30 @@ BEGIN
     WHERE var_username = u.username AND var_password = u.password;
 END;
 $BODY$;
+
+CREATE OR REPLACE FUNCTION public.addadvertisement(
+	var_userid character varying,
+	var_advertisementtype character varying,
+	var_entityid character varying,
+	var_price character varying,
+	var_description character varying,
+	OUT res_advertisementposted boolean,
+	OUT ret_id uuid,
+	OUT ret_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+BEGIN
+	INSERT INTO public.Advertisement(ID, UserID, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_userid, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    res_advertisementposted := true;
+    ret_id := id;
+	ret_error := 'Advert Successfully Created!';
+END;
+$BODY$;

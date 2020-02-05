@@ -375,3 +375,70 @@ BEGIN
 	ret_error := 'Advert Successfully Created!';
 END;
 $BODY$;
+
+CREATE OR REPLACE FUNCTION public.getadvertisement(
+	var_advertisementid uuid)
+    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price character varying, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u
+    WHERE var_advertisementid = u.id;
+END;
+$BODY$;
+
+
+CREATE OR REPLACE FUNCTION public.updateadvertisement(
+	var_advertisementid uuid,
+	var_userid uuid,
+	var_advertisementtype character varying,
+	var_entityid uuid,
+	var_price character varying,
+	var_description character varying,
+	OUT res_updated boolean,
+	OUT res_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    UPDATE public.Advertisement
+   	SET advertisementid = var_advertisementid, advertisementtype = var_advertisementtype, entityid = var_entityid, price = var_price, description = var_description, modifieddatetime = CURRENT_TIMESTAMP 
+    WHERE var_advertisementid = id;
+    res_updated := true;
+	res_error := 'Advert Successfully Updated';
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.deleteadvertisement(
+	var_advertisementid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.id = var_advertisementid) THEN
+        UPDATE public.Advertisement
+        SET isdeleted = true 
+        WHERE var_advertisementid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;

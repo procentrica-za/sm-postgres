@@ -358,6 +358,7 @@ BEGIN
 END;
 $BODY$;
 
+<<<<<<< HEAD
 /* ---- Populating user table with default users. ----  */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
@@ -395,3 +396,98 @@ INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted,
 VALUES ('PAR','Parking', 'The Property has parking.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
+=======
+CREATE OR REPLACE FUNCTION public.addadvertisement(
+	var_userid character varying,
+	var_advertisementtype character varying,
+	var_entityid character varying,
+	var_price character varying,
+	var_description character varying,
+	OUT res_advertisementposted boolean,
+	OUT ret_id uuid,
+	OUT ret_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+BEGIN
+	INSERT INTO public.Advertisement(ID, UserID, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_userid, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    res_advertisementposted := true;
+    ret_id := id;
+	ret_error := 'Advert Successfully Created!';
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.getadvertisement(
+	var_advertisementid uuid)
+    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price character varying, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u
+    WHERE var_advertisementid = u.id;
+END;
+$BODY$;
+
+
+CREATE OR REPLACE FUNCTION public.updateadvertisement(
+	var_advertisementid uuid,
+	var_userid uuid,
+	var_advertisementtype character varying,
+	var_entityid uuid,
+	var_price character varying,
+	var_description character varying,
+	OUT res_updated boolean,
+	OUT res_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    UPDATE public.Advertisement
+   	SET advertisementid = var_advertisementid, advertisementtype = var_advertisementtype, entityid = var_entityid, price = var_price, description = var_description, modifieddatetime = CURRENT_TIMESTAMP 
+    WHERE var_advertisementid = id;
+    res_updated := true;
+	res_error := 'Advert Successfully Updated';
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.deleteadvertisement(
+	var_advertisementid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.id = var_advertisementid) THEN
+        UPDATE public.Advertisement
+        SET isdeleted = true 
+        WHERE var_advertisementid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+>>>>>>> dab3e52c6f99166db7d439c6c455d2186e357015

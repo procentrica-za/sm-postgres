@@ -455,8 +455,47 @@ BEGIN
 END;
 $BODY$;
 
+CREATE OR REPLACE FUNCTION public.deleteuseradvertisements(
+	var_userid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
 
-/* ---- Populating user table with default users. ----  */
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT * FROM public.Advertisement u WHERE u.userid = var_userid) THEN
+        UPDATE public.Advertisement
+        SET isdeleted = true 
+        WHERE var_userid = userid;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.getadvertisementbytype(
+	var_advertisementtype character varying)
+    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u
+    WHERE var_advertisementtype  = u.advertisementtype;
+END;
+$BODY$;
+
+/* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
 SELECT public.registeruser('Blairzee', '!Blairzee', 'Blaire', 'Baldwin', 'Blaire24@gmail.com');
@@ -493,3 +532,7 @@ INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted,
 VALUES ('PAR','Parking', 'The Property has parking.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
+
+
+
+

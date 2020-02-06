@@ -488,3 +488,47 @@ BEGIN
     
 END;
 $BODY$;
+
+CREATE OR REPLACE FUNCTION public.deleteuseradvertisements(
+	var_userid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT * FROM public.Advertisement u WHERE u.userid = var_userid) THEN
+        UPDATE public.Advertisement
+        SET isdeleted = true 
+        WHERE var_userid = userid;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.getadvertisementbytype(
+	var_advertisementtype character varying)
+    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u
+    WHERE var_advertisementtype  = u.advertisementtype;
+END;
+$BODY$;
+
+
+
+

@@ -1,5 +1,7 @@
+/* ---- Creating Extension needed for uuid datatypes and uuid operations ---- */
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+/* ---- Initializing all tables ---- */
 
 CREATE TABLE public.Image (
     ID uuid PRIMARY KEY NOT NULL,
@@ -36,7 +38,7 @@ CREATE TABLE public.Advertisement (
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     AdvertisementType Varchar(3) NOT NULL,
     EntityID uuid NOT NULL,
-    Price Decimal NOT NULL,
+    Price DEC(15,2) NOT NULL,
     Description Varchar(255) NOT NULL,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
@@ -66,12 +68,13 @@ CREATE TABLE public.Rating (
 );
 CREATE TABLE public.AdvertisementType (
     Code Varchar(3) NOT NULL,
-    Name Varchar(3) NOT NULL,
+    Name Varchar(350) NOT NULL,
     Description Varchar(255) NOT NULL,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
 CREATE TABLE public.Institution (
     ID uuid PRIMARY KEY NOT NULL,
     Name Varchar(50) NOT NULL,
@@ -79,6 +82,8 @@ CREATE TABLE public.Institution (
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
+
 CREATE TABLE public.Faculty (
     ID uuid PRIMARY KEY NOT NULL,
     InstitutionID uuid NOT NULL,
@@ -142,6 +147,7 @@ CREATE TABLE public.Tutor (
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
 CREATE TABLE public.AccomodationType (
     Code Varchar(3) PRIMARY KEY NOT NULL,
     Name Varchar(50) NOT NULL,
@@ -150,6 +156,7 @@ CREATE TABLE public.AccomodationType (
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
 CREATE TABLE public.Accomodation (
     ID uuid PRIMARY KEY NOT NULL,
     AccomodationTypeCode varchar(3) NOT NULL,
@@ -167,13 +174,14 @@ CREATE TABLE public.Accomodation (
     ModifiedDateTime timestamp
 );
 CREATE TABLE public.Feature (
-    ID uuid PRIMARY KEY NOT NULL,
+    Code VARCHAR(3) PRIMARY KEY NOT NULL,
     Name Varchar(100) NOT NULL,
     Description Varchar(255) NOT NULL,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
 CREATE TABLE public.AccomodationFeature (
     AccomodationID uuid NOT NULL,
     FeatureID uuid NOT NULL,
@@ -214,6 +222,7 @@ CREATE TABLE public.Event (
     ModifiedDateTime timestamp
 );
 
+/* ---- Creating all functions needed for CRUD functions to be used by the CRUD service ---- */
 CREATE OR REPLACE FUNCTION public.registeruser(
 	var_username character varying,
 	var_password character varying,
@@ -349,11 +358,50 @@ BEGIN
 END;
 $BODY$;
 
+
+/* ---- Populating user table with default users. ----  */
+SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
+SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
+SELECT public.registeruser('Blairzee', '!Blairzee', 'Blaire', 'Baldwin', 'Blaire24@gmail.com');
+
+/* ---- Populating lookup tables with default values. ---- */
+
+/* ---- ACCOMODATION TYPES ---- */
+INSERT INTO public.AccomodationType(Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('COM', 'Commune', 'A group of people living together and sharing kitchen, bathrooms with their own seperate bedrooms.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.AccomodationType(Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('APT', 'Appartement', 'A self-contained housing unit (a type of residential real estate) that occupies only part of a building, generally on a single storey.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.AccomodationType(Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('HSE', 'House', 'A building for human habitation, especially one that consists of a ground floor and one or more upper storeys.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.AccomodationType(Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('GDC', 'Garden Cottage', 'A small house in the garden of a generally larger house.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+/* ---- ADVERTISEMENT TYPES ---- */
+INSERT INTO public.AdvertisementType (Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('TXB','Textbook', 'A book used for the study of a subject. People use a textbook to learn facts and methods about a certain subject.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.AdvertisementType (Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('NTS','Notes', 'Notes taken on class lectures about key points or discussions that may serve as study aids.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.AdvertisementType (Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('TUT','Tutor', 'Tutors are responsible for helping students to understand different subjects. They assess, assist and encourage the students in the learning processes.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.AdvertisementType (Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('ACD','Accomodation', 'Living quaters provided by privately for public use.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+/* ---- INSTITUTIONS ---- */
+INSERT INTO public.Institution(ID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES (uuid_generate_v4(), 'University of Pretoria', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Institution(ID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES (uuid_generate_v4(), 'University of Johannesburg', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+/* ---- FEATURES ---- */
+INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('FBR','Fibre', 'The property is fibre ready.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
+INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('PAR','Parking', 'The Property has parking.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
+INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
+
 CREATE OR REPLACE FUNCTION public.addadvertisement(
-	var_userid character varying,
+	var_userid uuid,
 	var_advertisementtype character varying,
-	var_entityid character varying,
-	var_price character varying,
+	var_entityid uuid,
+	var_price float,
 	var_description character varying,
 	OUT res_advertisementposted boolean,
 	OUT ret_id uuid,
@@ -378,7 +426,7 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.getadvertisement(
 	var_advertisementid uuid)
-    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price character varying, description character varying)
+    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE
@@ -398,7 +446,7 @@ CREATE OR REPLACE FUNCTION public.updateadvertisement(
 	var_userid uuid,
 	var_advertisementtype character varying,
 	var_entityid uuid,
-	var_price character varying,
+	var_price float,
 	var_description character varying,
 	OUT res_updated boolean,
 	OUT res_error character varying)
@@ -412,7 +460,7 @@ AS $BODY$
 DECLARE
 BEGIN
     UPDATE public.Advertisement
-   	SET advertisementid = var_advertisementid, advertisementtype = var_advertisementtype, entityid = var_entityid, price = var_price, description = var_description, modifieddatetime = CURRENT_TIMESTAMP 
+   	SET id = var_advertisementid, advertisementtype = var_advertisementtype, entityid = var_entityid, price = var_price, description = var_description, modifieddatetime = CURRENT_TIMESTAMP 
     WHERE var_advertisementid = id;
     res_updated := true;
 	res_error := 'Advert Successfully Updated';

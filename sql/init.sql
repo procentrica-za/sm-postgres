@@ -358,7 +358,6 @@ BEGIN
 END;
 $BODY$;
 
-
 /* ---- Populating user table with default users. ----  */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
@@ -396,7 +395,6 @@ INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted,
 VALUES ('PAR','Parking', 'The Property has parking.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
-
 CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_userid uuid,
 	var_advertisementtype character varying,

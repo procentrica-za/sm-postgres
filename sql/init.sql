@@ -44,6 +44,8 @@ CREATE TABLE public.Advertisement (
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
+
 CREATE TABLE public.Rating (
     ID uuid PRIMARY KEY NOT NULL,
     AdvertisementID uuid NOT NULL,

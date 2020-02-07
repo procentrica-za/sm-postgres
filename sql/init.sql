@@ -494,6 +494,39 @@ BEGIN
 END;
 $BODY$;
 
+CREATE OR REPLACE FUNCTION public.getadvertisementbyuserid(
+	var_userid uuid)
+    RETURNS TABLE(advertisementid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u
+    WHERE var_userid  = u.userid;
+END;
+$BODY$;
+
+
+CREATE OR REPLACE FUNCTION public.getalladvertisements()
+    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u;
+END;
+$BODY$;
+
+
+
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');

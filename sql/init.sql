@@ -341,21 +341,30 @@ BEGIN
 END;
 $BODY$;
 
+
 CREATE OR REPLACE FUNCTION public.loginuser(
 	var_username varchar(50),
-	var_password varchar(50)
+	var_password varchar(50),
+    OUT ret_userid uuid,
+    OUT ret_username varchar(50),
+    OUT ret_successlogin boolean
 )
-    RETURNS TABLE(userid uuid, username character varying)
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE
-    ROWS 1000
 AS $BODY$
 BEGIN
-	RETURN QUERY
-	SELECT u.id, u.username
-    FROM public.User u
-    WHERE var_username = u.username AND var_password = u.password;
+IF EXISTS (SELECT 1 FROM public.User u WHERE u.username = var_username AND u.password = var_password) THEN
+    SELECT u.id, u.username
+    INTO ret_userid, ret_username 
+    FROM public.User u 
+    WHERE  u.username = var_username AND u.password = var_password; 
+    ret_successlogin = true;
+    ELSE
+        ret_userid = '00000000-0000-0000-0000-000000000000';
+        ret_username = var_username;
+        ret_successlogin = false; 
+    END IF;
 END;
 $BODY$;
 

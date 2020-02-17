@@ -320,13 +320,17 @@ IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id 
 		ELSE IF (SELECT 1 FROM public.user u WHERE u.email = var_email AND u.id != var_userid) THEN
 			res_updated := false;
 			res_error := 'This Email Already Exists!';
-				ELSE
-    				UPDATE public.User
-   				 	SET username = var_username, password = var_password, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP 
-    				WHERE var_userid = id AND isdeleted = false;
-    				res_updated := true;
-					res_error := 'User Successfully Updated';
-				END IF;
+                ELSE IF (SELECT 1 FROM public.user u WHERE u.isdeleted = true AND u.id = var_userid) THEN
+			    res_updated := false;
+			    res_error := 'This User is deleted!';
+				    ELSE
+    				    UPDATE public.User
+   				 	    SET username = var_username, password = var_password, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP 
+    				    WHERE var_userid = id;
+    				    res_updated := true;
+					    res_error := 'User Successfully Updated';
+				    END IF;
+                END IF;
 		END IF;
 END;
 $BODY$;
@@ -458,11 +462,16 @@ CREATE OR REPLACE FUNCTION public.updateadvertisement(
 AS $BODY$
 DECLARE
 BEGIN
-    UPDATE public.Advertisement
-   	SET id = var_advertisementid, advertisementtype = var_advertisementtype, entityid = var_entityid, price = var_price, description = var_description, modifieddatetime = CURRENT_TIMESTAMP 
-    WHERE var_advertisementid = id AND isdeleted = false;
-    res_updated := true;
-	res_error := 'Advert Successfully Updated';
+IF EXISTS (SELECT 1 FROM public.advertisement u WHERE u.isdeleted = true AND u.id = var_advertisementid) THEN
+	res_updated := false;
+	res_error := 'This Advertisement is deleted!';
+    ELSE
+        UPDATE public.Advertisement
+   	    SET id = var_advertisementid, advertisementtype = var_advertisementtype, entityid = var_entityid, price = var_price, description = var_description, modifieddatetime = CURRENT_TIMESTAMP 
+        WHERE var_advertisementid = id AND isdeleted = false;
+        res_updated := true;
+	    res_error := 'Advert Successfully Updated';
+    END IF;
 END;
 $BODY$;
 

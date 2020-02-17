@@ -547,25 +547,21 @@ END;
 $BODY$;
 
 
-CREATE OR REPLACE FUNCTION public.getalladvertisements(
-    OUT ret_varid uuid,
-    OUT ret_userid uuid,
-    OUT ret_advertisementtype character varying,
-    OUT ret_entityid uuid,
-    OUT ret_price float,
-    OUT ret_description character varying)
+CREATE OR REPLACE FUNCTION public.getalladvertisements()
+    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE
+    ROWS 1000
 AS $BODY$
 BEGIN
-IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.isdeleted = false) THEN
+	RETURN QUERY
 	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
-    INTO ret_varid, ret_userid, ret_advertisementtype, ret_entityid, ret_price, ret_description
     FROM public.Advertisement u
     WHERE isdeleted = false;
 END;
 $BODY$;
+
 
 
 

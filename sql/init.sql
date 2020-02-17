@@ -411,18 +411,31 @@ END;
 $BODY$;
 
 CREATE OR REPLACE FUNCTION public.getadvertisement(
-	var_advertisementid uuid)
-    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+	var_advertisementid uuid,
+    OUT ret_varid uuid,
+    OUT ret_userid uuid,
+    OUT ret_advertisementtype character varying,
+    OUT ret_entityid uuid,
+    OUT ret_price float,
+    OUT ret_description character varying)
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE
-    ROWS 1000
 AS $BODY$
 BEGIN
-	RETURN QUERY
+IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.id = var_advertisementid AND u.isdeleted = false) THEN
 	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
+    INTO ret_varid, ret_userid, ret_advertisementtype, ret_entityid, ret_price, ret_description
     FROM public.Advertisement u
-    WHERE var_advertisementid = u.id;
+    WHERE var_advertisementid = u.id AND isdeleted = false;
+    ELSE
+        ret_varid = '00000000-0000-0000-0000-000000000000';
+        ret_userid = '00000000-0000-0000-0000-000000000000';
+		ret_advertisementtype = 'none';
+		ret_entityid = '00000000-0000-0000-0000-000000000000';
+		ret_price = 0;
+        ret_description = 'none'; 
+    END IF;
 END;
 $BODY$;
 
@@ -534,17 +547,23 @@ END;
 $BODY$;
 
 
-CREATE OR REPLACE FUNCTION public.getalladvertisements()
-    RETURNS TABLE(advertisementid uuid, userid uuid, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+CREATE OR REPLACE FUNCTION public.getalladvertisements(
+    OUT ret_varid uuid,
+    OUT ret_userid uuid,
+    OUT ret_advertisementtype character varying,
+    OUT ret_entityid uuid,
+    OUT ret_price float,
+    OUT ret_description character varying)
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE
-    ROWS 1000
 AS $BODY$
 BEGIN
-	RETURN QUERY
+IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.isdeleted = false) THEN
 	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
-    FROM public.Advertisement u;
+    INTO ret_varid, ret_userid, ret_advertisementtype, ret_entityid, ret_price, ret_description
+    FROM public.Advertisement u
+    WHERE isdeleted = false;
 END;
 $BODY$;
 

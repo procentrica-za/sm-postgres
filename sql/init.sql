@@ -323,7 +323,7 @@ IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id 
 				ELSE
     				UPDATE public.User
    				 	SET username = var_username, password = var_password, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP 
-    				WHERE var_userid = id;
+    				WHERE var_userid = id AND isdeleted = false;
     				res_updated := true;
 					res_error := 'User Successfully Updated';
 				END IF;
@@ -460,7 +460,7 @@ DECLARE
 BEGIN
     UPDATE public.Advertisement
    	SET id = var_advertisementid, advertisementtype = var_advertisementtype, entityid = var_entityid, price = var_price, description = var_description, modifieddatetime = CURRENT_TIMESTAMP 
-    WHERE var_advertisementid = id;
+    WHERE var_advertisementid = id AND isdeleted = false;
     res_updated := true;
 	res_error := 'Advert Successfully Updated';
 END;
@@ -526,7 +526,7 @@ BEGIN
 	RETURN QUERY
 	SELECT u.id, u.userid, u.advertisementtype, u.entityid, u.price, u.description
     FROM public.Advertisement u
-    WHERE var_advertisementtype  = u.advertisementtype;
+    WHERE var_advertisementtype  = u.advertisementtype AND isdeleted = false;
 END;
 $BODY$;
 

@@ -267,18 +267,32 @@ END;
 $BODY$;
 
 CREATE OR REPLACE FUNCTION public.getuser(
-	var_userid uuid)
-    RETURNS TABLE(userid uuid, username character varying, name character varying, surname character varying, email character varying)
+	var_userid uuid,
+OUT ret_varid uuid,
+OUT ret_username varchar(50),
+OUT ret_name varchar (50),
+OUT ret_surname varchar (50),
+OUT ret_email varchar (50),
+OUT ret_successget boolean)
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE
-    ROWS 1000
 AS $BODY$
 BEGIN
-	RETURN QUERY
+IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid AND u.isdeleted = false) THEN
 	SELECT u.id, u.username, u.name, u.surname, u.email
+	INTO ret_varid, ret_username, ret_name, ret_surname, ret_email
     FROM public.User u
-    WHERE var_userid = u.id;
+    WHERE var_userid = u.id AND isdeleted = false;
+	ret_successget = true;
+	ELSE
+        ret_varid = '00000000-0000-0000-0000-000000000000';
+        ret_username = 'none';
+		ret_name = 'none';
+		ret_surname = 'none';
+		ret_email = 'none';
+        ret_successget = false; 
+    END IF;
 END;
 $BODY$;
 

@@ -542,7 +542,7 @@ BEGIN
 	RETURN QUERY
 	SELECT u.id, u.advertisementtype, u.entityid, u.price, u.description
     FROM public.Advertisement u
-    WHERE var_userid  = u.userid;
+    WHERE var_userid  = u.userid AND isdeleted = false;
 END;
 $BODY$;
 

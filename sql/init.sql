@@ -225,6 +225,9 @@ CREATE TABLE public.Event (
 );
 
 /* ---- Creating all functions needed for CRUD functions to be used by the CRUD service ---- */
+
+
+/* ---- Register User Function ---- */
 CREATE OR REPLACE FUNCTION public.registeruser(
 	var_username character varying,
 	var_password character varying,
@@ -267,6 +270,8 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Get user on ID Function ---- */
+
 CREATE OR REPLACE FUNCTION public.getuser(
 	var_userid uuid,
 OUT ret_varid uuid,
@@ -296,6 +301,8 @@ IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid AND u.isdeleted =
     END IF;
 END;
 $BODY$;
+
+/* ---- Update User details Function ---- */
 
 CREATE OR REPLACE FUNCTION public.updateuser(
 	var_userid uuid,
@@ -336,6 +343,8 @@ IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id 
 END;
 $BODY$;
 
+/* ---- Delete User on ID Function ---- */
+
 CREATE OR REPLACE FUNCTION public.deleteuser(
 	var_userid uuid,
 	OUT res_deleted boolean)
@@ -360,6 +369,7 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Login User Function ---- */
 
 CREATE OR REPLACE FUNCTION public.loginuser(
 	var_username varchar(50),
@@ -387,6 +397,7 @@ IF EXISTS (SELECT 1 FROM public.User u WHERE u.username = var_username AND u.pas
 END;
 $BODY$;
 
+/* ---- Add new Advertisement Function ---- */
 
 CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_userid uuid,
@@ -415,6 +426,8 @@ BEGIN
 	ret_error := 'Advert Successfully Created!';
 END;
 $BODY$;
+
+/* ---- Get advertisement on ID Function ---- */
 
 CREATE OR REPLACE FUNCTION public.getadvertisement(
 	var_advertisementid uuid,
@@ -446,6 +459,7 @@ IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.id = var_advertisementid
 END;
 $BODY$;
 
+/* ---- Update Advertisement Function ---- */
 
 CREATE OR REPLACE FUNCTION public.updateadvertisement(
 	var_advertisementid uuid,
@@ -479,6 +493,9 @@ IF EXISTS (SELECT 1 FROM public.advertisement u WHERE u.isdeleted = true AND u.i
 END;
 $BODY$;
 
+
+/* ---- Delete Advertisement on ID Function ---- */
+
 CREATE OR REPLACE FUNCTION public.deleteadvertisement(
 	var_advertisementid uuid,
 	OUT res_deleted boolean)
@@ -502,6 +519,8 @@ BEGIN
     
 END;
 $BODY$;
+
+/* ---- Delete Advertisements pertaining to Users Function ---- */
 
 CREATE OR REPLACE FUNCTION public.deleteuseradvertisements(
 	var_userid uuid,
@@ -527,6 +546,8 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Get Advertisements by ad type Function ---- */
+
 CREATE OR REPLACE FUNCTION public.getadvertisementbytype(
 	var_advertisementtype character varying)
     RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, entityid uuid, price numeric, description character varying)
@@ -542,6 +563,8 @@ BEGIN
     WHERE var_advertisementtype  = u.advertisementtype AND isdeleted = false;
 END;
 $BODY$;
+
+/* ---- Get Advertisement by User ID Function ---- */
 
 CREATE OR REPLACE FUNCTION public.getadvertisementbyuserid(
 	var_userid uuid)
@@ -559,6 +582,7 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Get all advertisements Function ---- */
 
 CREATE OR REPLACE FUNCTION public.getalladvertisements()
     RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, entityid uuid, price numeric, description character varying)

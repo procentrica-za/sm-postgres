@@ -401,7 +401,6 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_userid uuid,
-    var_isselling boolean,
 	var_advertisementtype character varying,
 	var_entityid uuid,
 	var_price float,
@@ -419,16 +418,121 @@ AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-	INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_userid, var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	INSERT INTO public.Advertisement(ID, UserID, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_userid, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     res_advertisementposted := true;
     ret_id := id;
 	ret_error := 'Advert Successfully Created!';
 END;
 $BODY$;
 
-/* ---- Get advertisement on ID Function ---- */
+/* ---- Add Textbook Function ---- */
+/* TODO: Error handling for duplicates */
+CREATE OR REPLACE FUNCTION public.addtextbook(
+	var_moduleid uuid,
+	var_name character varying,
+	var_edition character varying,
+	var_quality character varying,
+	var_author character varying,
+	OUT ret_success bool,
+	OUT ret_textbookid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
 
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+	id uuid := uuid_generate_v4();
+BEGIN
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_moduleid, var_name, var_edition, var_quality, var_author, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	ret_success = true;
+	ret_textbookid = id;
+END;
+$BODY$;
+
+/* ---- Add Tutor Function ---- */
+/* TODO: Error handling for duplicates */
+CREATE OR REPLACE FUNCTION public.addtutor(
+	var_moduleid uuid,
+	var_subject character varying,
+	var_yearcompleted character varying,
+	var_venue character varying,
+	var_notesincluded bool,
+    var_terms character varying,
+	OUT ret_success bool,
+	OUT ret_tutorid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+	id uuid := uuid_generate_v4();
+BEGIN
+INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_subject, var_yearcompleted, var_moduleid, var_venue, var_notesincluded, var_terms, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	ret_success = true;
+	ret_tutorid = id;
+END;
+$BODY$;
+
+/* ---- Add Accomodation Function ---- */
+/* TODO: Error handling for duplicates */
+CREATE OR REPLACE FUNCTION public.addaccomodation(
+	var_accomodationTypeCode character varying,
+	var_institutionid uuid,
+	var_location character varying,
+    var_distanceToCampus character varying,
+	OUT ret_success bool,
+	OUT ret_accomodationid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+	id uuid := uuid_generate_v4();
+BEGIN
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_accomodationTypeCode, var_institutionid, var_location, var_distanceToCampus, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	ret_success = true;
+	ret_accomodationid = id;
+END;
+$BODY$;
+
+/* ---- Add Notes Function ---- */
+/* TODO: Error handling for duplicates */
+CREATE OR REPLACE FUNCTION public.addnotes(
+	var_moduleid uuid,
+	OUT ret_success bool,
+	OUT ret_noteid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+	id uuid := uuid_generate_v4();
+BEGIN
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_moduleid, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	ret_success = true;
+	ret_noteid = id;
+END;
+$BODY$;
+
+
+
+/* ---- Get advertisement on ID Function ---- */
 CREATE OR REPLACE FUNCTION public.getadvertisement(
 	var_advertisementid uuid,
     OUT ret_varid uuid,
@@ -599,6 +703,101 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Get Textbooks by Filter Function ---- */
+CREATE OR REPLACE FUNCTION public.gettextbookbyfilter(
+	var_modulecode character varying,
+	var_name character varying,
+	var_edition character varying,
+	var_quality character varying,
+	var_author character varying)
+    RETURNS TABLE(modulecode character varying, id uuid, name character varying, edition character varying, quality character varying, author character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+    
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT m.modulecode, t.id, t.name, t.edition, t.quality, t.author
+    FROM public.Textbook t
+	INNER JOIN public.Module m  
+	ON m.id = t.moduleid AND m.isdeleted = false
+    WHERE t.name LIKE var_name AND t.edition LIKE var_edition AND t.quality LIKE var_quality AND t.author LIKE var_author AND m.ModuleCode LIKE var_modulecode AND t.IsDeleted = false;
+END;
+$BODY$;
+
+/* ---- Get Tutors by Filter Function ---- */
+CREATE OR REPLACE FUNCTION public.gettutorbyfilter(
+	var_modulecode character varying,
+	var_subject character varying,
+	var_yearcompleted character varying,
+	var_venue character varying,
+	var_notesincluded character varying,
+	var_terms character varying)
+    RETURNS TABLE(modulecode character varying, id uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+    
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT m.modulecode, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms
+    FROM public.Tutor t
+	INNER JOIN public.Module m  
+	ON m.id = t.moduleid AND m.isdeleted = false
+    WHERE t.subject LIKE var_subject AND t.yearcompleted LIKE var_yearCompleted AND t.venue LIKE var_venue AND CAST(t.notesincluded AS character varying) LIKE var_notesIncluded AND t.terms LIKE var_terms AND m.ModuleCode LIKE var_modulecode AND t.IsDeleted = false;
+END;
+$BODY$;
+
+/* ---- Get Accomodation by Filter Function ---- */
+CREATE OR REPLACE FUNCTION public.getaccomodationbyfilter(
+	var_accomodationcode character varying,
+    var_institutionname character varying,
+    var_location character varying,
+    var_distancetocampus character varying)
+    RETURNS TABLE(institution character varying, accomodationtypecode character varying, location character varying, distancetocampus character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+    
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT i.name, a.accomodationtypecode, a.location, a.distancetocampus
+    FROM public.Accomodation a
+	INNER JOIN public.Institution i  
+	ON i.id = a.institutionid AND i.isdeleted = false
+    WHERE i.name LIKE var_institutionname AND a.accomodationtypecode LIKE var_accomodationcode AND a.location LIKE var_location AND a.distancetocampus LIKE var_distancetocampus AND a.isdeleted = false;
+END;
+$BODY$;
+
+/* ---- Get Notes by Filter Function ---- */
+CREATE OR REPLACE FUNCTION public.getnotesbyfilter(
+	var_modulecode character varying)
+    RETURNS TABLE(modulecode character varying, id uuid) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+    
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT m.modulecode, n.id
+    FROM public.Notes n
+	INNER JOIN public.Module m  
+	ON m.id = n.moduleid AND m.isdeleted = false
+    WHERE m.ModuleCode LIKE var_modulecode AND n.isdeleted = false;
+END;
+$BODY$;
 
 
 
@@ -632,6 +831,94 @@ INSERT INTO public.Institution(ID,Name,CreatedDateTime,IsDeleted,ModifiedDateTim
 VALUES (uuid_generate_v4(), 'University of Pretoria', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Institution(ID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES (uuid_generate_v4(), 'University of Johannesburg', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+/* ---- FACULTIES ---- */
+INSERT INTO public.Faculty(ID,InstitutionID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('ec7e55ab-da81-48b1-87df-51d75296297e', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'EMS', CURRENT_TIMESTAMP, false , CURRENT_TIMESTAMP);
+INSERT INTO public.Faculty(ID,InstitutionID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('79c43f4d-7aff-49bc-bd7d-5b4c630ab7f5', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'ENG', CURRENT_TIMESTAMP, false , CURRENT_TIMESTAMP);
+INSERT INTO public.Faculty(ID,InstitutionID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('6382b19c-dc86-43d1-8113-b0f765c91e6f', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'LAW', CURRENT_TIMESTAMP, false , CURRENT_TIMESTAMP);
+INSERT INTO public.Faculty(ID,InstitutionID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('8acca7e9-fdba-4a0f-88f3-1a4cc0c0f32f', 'fb901315-d971-4347-880b-bc8c6292386f', 'EMS', CURRENT_TIMESTAMP, false , CURRENT_TIMESTAMP);
+INSERT INTO public.Faculty(ID,InstitutionID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('060d4547-65c5-495e-a381-b42107fb632f', 'fb901315-d971-4347-880b-bc8c6292386f', 'ENG', CURRENT_TIMESTAMP, false , CURRENT_TIMESTAMP);
+INSERT INTO public.Faculty(ID,InstitutionID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('65f21344-e49e-4f29-bccd-a7e39056d3f9', 'fb901315-d971-4347-880b-bc8c6292386f', 'LAW', CURRENT_TIMESTAMP, false , CURRENT_TIMESTAMP);
+/* ---- MODULES ---- */
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'ec7e55ab-da81-48b1-87df-51d75296297e', 'Business Management Basics', 'OBS110', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'ec7e55ab-da81-48b1-87df-51d75296297e', 'Business Management Advanced', 'OBS120', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('433ce13a-22ce-4f53-8a75-c7b8e190f15f', '79c43f4d-7aff-49bc-bd7d-5b4c630ab7f5', 'Electrical Engineering Basics', 'ENG111', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('69ba5241-2059-40b0-b02a-7d983d01b6e5', '79c43f4d-7aff-49bc-bd7d-5b4c630ab7f5', 'Electrical Engineering Advanced', 'ENG122', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('6168c0d4-a541-450c-9de2-bea7e5be1b00', '6382b19c-dc86-43d1-8113-b0f765c91e6f', 'Family Law Basics', 'LLB120', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('edf58c02-1a51-4188-b21b-f05f82677da8', '6382b19c-dc86-43d1-8113-b0f765c91e6f', 'Family Law Advanced', 'LLB140', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('b83a1751-f6bc-466c-b20e-3d837cc22fda', '8acca7e9-fdba-4a0f-88f3-1a4cc0c0f32f', 'Economics Basics', 'EKN110', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('9b137496-d030-4e4d-b85b-2ea334e0179d', '8acca7e9-fdba-4a0f-88f3-1a4cc0c0f32f', 'Economics Advanced', 'EKN122', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('d53a2759-0df7-41a4-a8d1-dbbcca3f4f47', '060d4547-65c5-495e-a381-b42107fb632f', 'Chemical Engineering Basics', 'CHE156', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('7c0bc68a-b123-46ca-8d04-d91d7a1c0768', '060d4547-65c5-495e-a381-b42107fb632f', 'Chemical Engineering Advanced', 'CHE186', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('15f5d63c-01cf-480c-aadc-335672da87a2', '65f21344-e49e-4f29-bccd-a7e39056d3f9', 'Industrial Law Basics', 'ILB111', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('888b571a-1819-48c8-a8f1-27686b55eb3b', '65f21344-e49e-4f29-bccd-a7e39056d3f9', 'Industrial Law Advanced', 'ILB122', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+/* ---- TEXTBOOKS ---- */
+SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Strategy Principles', '1', 'Used', 'Franklin James');
+SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Strategy Principles', '1', 'New', 'Franklin James');
+SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Logistics Principles', '3', 'Used', 'Franklin James');
+SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Logistics Principles', '2', 'Used', 'Franklin James');
+
+SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineer Structures Principles', '1', 'New', 'Thomas Edison');
+SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineer Structures Advanced', '1', 'New', 'Thomas Edison');
+SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineer Structures Principles', '1', 'New', 'Roberto Edgar L');
+SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Business Structures Advanced', '1', 'New', 'Roberto Edgar L');
+
+
+/* ---- TUTORS ---- */ 
+SELECT public.addtutor('2e901148-ae96-4158-a92a-3c6f371d1ea1','Business Management','2018','Campus',false,'Per Lesson');
+SELECT public.addtutor('2e901148-ae96-4158-a92a-3c6f371d1ea1','Business Management','2019','Both',true,'Per Lesson');
+SELECT public.addtutor('2e901148-ae96-4158-a92a-3c6f371d1ea1','Business Logistics','2019','Both',true,'Minimum 5 Lessons');
+
+SELECT public.addtutor('433ce13a-22ce-4f53-8a75-c7b8e190f15f','Engineering','2018','Campus',true,'Per Lesson');
+SELECT public.addtutor('433ce13a-22ce-4f53-8a75-c7b8e190f15f','Engineering Structures','2018','At Home',false,'Minimum 10 Lessons');
+SELECT public.addtutor('433ce13a-22ce-4f53-8a75-c7b8e190f15f','Engineering','2019','Campus',false,'Per Lesson');
+
+
+/* ---- ACCOMODATION ---- */
+SELECT public.addaccomodation('APT', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Hatfield', '1.2Km');
+SELECT public.addaccomodation('COM', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '2.8Km');
+SELECT public.addaccomodation('HSE', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '4.8Km');
+SELECT public.addaccomodation('GDC', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Pretoria CBD', '8.5Km');
+
+SELECT public.addaccomodation('APT', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '5.4Km');
+SELECT public.addaccomodation('COM', 'fb901315-d971-4347-880b-bc8c6292386f', 'Main Campus', '0.5Km');
+SELECT public.addaccomodation('HSE', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '8.9Km');
+SELECT public.addaccomodation('GDC', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', '1.7Km');
+
+/* ---- NOTES ---- */
+SELECT public.addnotes('2e901148-ae96-4158-a92a-3c6f371d1ea1');
+SELECT public.addnotes('e47aa688-d18b-4c88-a93f-ecc5836a88f0');
+SELECT public.addnotes('e47aa688-d18b-4c88-a93f-ecc5836a88f0');
+SELECT public.addnotes('433ce13a-22ce-4f53-8a75-c7b8e190f15f');
+SELECT public.addnotes('433ce13a-22ce-4f53-8a75-c7b8e190f15f');
+SELECT public.addnotes('433ce13a-22ce-4f53-8a75-c7b8e190f15f');
+SELECT public.addnotes('7c0bc68a-b123-46ca-8d04-d91d7a1c0768');
+SELECT public.addnotes('7c0bc68a-b123-46ca-8d04-d91d7a1c0768');
+SELECT public.addnotes('9b137496-d030-4e4d-b85b-2ea334e0179d');
+
 /* ---- FEATURES ---- */
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('FBR','Fibre', 'The property is fibre ready.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);

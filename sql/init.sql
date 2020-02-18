@@ -801,6 +801,24 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Get Advertisements by Selling or Looking for Function ---- */
+
+CREATE OR REPLACE FUNCTION public.getadvertisementbyposttype(
+	var_isselling boolean)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.userid, u.isselling, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u
+    WHERE var_isselling  = u.isselling AND isdeleted = false;
+END;
+$BODY$;
+
 
 
 /* ---- Populating user table with default users. ---- */

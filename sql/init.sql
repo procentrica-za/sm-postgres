@@ -451,6 +451,7 @@ IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.id = var_advertisementid
     ELSE
         ret_varid = '00000000-0000-0000-0000-000000000000';
         ret_userid = '00000000-0000-0000-0000-000000000000';
+        ret_isselling = false;
 		ret_advertisementtype = 'none';
 		ret_entityid = '00000000-0000-0000-0000-000000000000';
 		ret_price = 0;

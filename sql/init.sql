@@ -401,6 +401,7 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_userid uuid,
+    var_isselling boolean,
 	var_advertisementtype character varying,
 	var_entityid uuid,
 	var_price float,
@@ -418,8 +419,8 @@ AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-	INSERT INTO public.Advertisement(ID, UserID, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_userid, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     res_advertisementposted := true;
     ret_id := id;
 	ret_error := 'Advert Successfully Created!';
@@ -829,9 +830,9 @@ INSERT INTO public.AdvertisementType (Code,Name,Description,CreatedDateTime,IsDe
 VALUES ('ACD','Accomodation', 'Living quaters provided by privately for public use.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 /* ---- INSTITUTIONS ---- */
 INSERT INTO public.Institution(ID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES (uuid_generate_v4(), 'University of Pretoria', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'University of Pretoria', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Institution(ID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES (uuid_generate_v4(), 'University of Johannesburg', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('fb901315-d971-4347-880b-bc8c6292386f', 'University of Johannesburg', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 /* ---- FACULTIES ---- */
 INSERT INTO public.Faculty(ID,InstitutionID,Name,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('ec7e55ab-da81-48b1-87df-51d75296297e', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'EMS', CURRENT_TIMESTAMP, false , CURRENT_TIMESTAMP);

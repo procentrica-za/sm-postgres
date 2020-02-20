@@ -401,6 +401,7 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_userid uuid,
+    var_isselling boolean,
 	var_advertisementtype character varying,
 	var_entityid uuid,
 	var_price float,
@@ -418,8 +419,8 @@ AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-	INSERT INTO public.Advertisement(ID, UserID, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_userid, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     res_advertisementposted := true;
     ret_id := id;
 	ret_error := 'Advert Successfully Created!';
@@ -595,6 +596,7 @@ IF EXISTS (SELECT 1 FROM public.Advertisement u WHERE u.id = var_advertisementid
     ELSE
         ret_varid = '00000000-0000-0000-0000-000000000000';
         ret_userid = '00000000-0000-0000-0000-000000000000';
+        ret_isselling = false;
 		ret_advertisementtype = 'none';
 		ret_entityid = '00000000-0000-0000-0000-000000000000';
 		ret_price = 0;
@@ -998,6 +1000,24 @@ CREATE OR REPLACE FUNCTION public.updatetutor(
 	OUT res_error character varying)
     RETURNS record
     LANGUAGE 'plpgsql'
+/* ---- Get Advertisements by Selling or Looking for Function ---- */
+
+CREATE OR REPLACE FUNCTION public.getadvertisementbyposttype(
+	var_isselling boolean)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.id, u.userid, u.isselling, u.advertisementtype, u.entityid, u.price, u.description
+    FROM public.Advertisement u
+    WHERE var_isselling  = u.isselling AND isdeleted = false;
+END;
+$BODY$;
+
 
     COST 100
     VOLATILE 

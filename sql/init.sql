@@ -440,12 +440,12 @@ $BODY$;
 /* ---- Add Textbook Function ---- */
 /* TODO: Error handling for duplicates */
 CREATE OR REPLACE FUNCTION public.addtextbook(
-	var_moduleid uuid,
+	var_modulecode character varying,
 	var_name character varying,
 	var_edition character varying,
 	var_quality character varying,
 	var_author character varying,
-	OUT ret_success bool,
+	OUT ret_success boolean,
 	OUT ret_textbookid uuid)
     RETURNS record
     LANGUAGE 'plpgsql'
@@ -456,18 +456,28 @@ CREATE OR REPLACE FUNCTION public.addtextbook(
 AS $BODY$
 DECLARE
 	id uuid := uuid_generate_v4();
+	var_moduleid uuid;
 BEGIN
-INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_moduleid, var_name, var_edition, var_quality, var_author, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
-	ret_success = true;
-	ret_textbookid = id;
+IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
+    SELECT m.id
+    INTO var_moduleid 
+    FROM public.Module m  
+    WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
+ 		INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    	VALUES (id, var_moduleid, var_name, var_edition, var_quality, var_author, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+		ret_success = true;
+		ret_textbookid = id;
+	ELSE
+		ret_success = false;
+		ret_textbookid = '00000000-0000-0000-0000-000000000000';
+	END IF;
 END;
 $BODY$;
 
 /* ---- Add Tutor Function ---- */
 /* TODO: Error handling for duplicates */
 CREATE OR REPLACE FUNCTION public.addtutor(
-	var_moduleid uuid,
+	var_modulecode character varying,
 	var_subject character varying,
 	var_yearcompleted character varying,
 	var_venue character varying,
@@ -484,11 +494,21 @@ CREATE OR REPLACE FUNCTION public.addtutor(
 AS $BODY$
 DECLARE
 	id uuid := uuid_generate_v4();
+    var_moduleid uuid;
 BEGIN
+IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
+    SELECT m.id
+    INTO var_moduleid 
+    FROM public.Module m  
+    WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime, IsDeleted, ModifiedDateTime)
     VALUES (id, var_subject, var_yearcompleted, var_moduleid, var_venue, var_notesincluded, var_terms, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
-	ret_success = true;
-	ret_tutorid = id;
+	    ret_success = true;
+	    ret_tutorid = id;
+    ELSE
+		ret_success = false;
+		ret_tutorid = '00000000-0000-0000-0000-000000000000';
+	END IF;
 END;
 $BODY$;
 
@@ -496,7 +516,7 @@ $BODY$;
 /* TODO: Error handling for duplicates */
 CREATE OR REPLACE FUNCTION public.addaccomodation(
 	var_accomodationTypeCode character varying,
-	var_institutionid uuid,
+	var_institutionname character varying,
 	var_location character varying,
     var_distanceToCampus character varying,
 	OUT ret_success bool,
@@ -510,18 +530,28 @@ CREATE OR REPLACE FUNCTION public.addaccomodation(
 AS $BODY$
 DECLARE
 	id uuid := uuid_generate_v4();
+    var_institutionid uuid;
 BEGIN
+IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institutionname AND i.isdeleted = false) THEN
+    SELECT i.id
+    INTO var_institutionid 
+    FROM public.institution i  
+    WHERE i.name = var_institutionname AND i.isdeleted = false;
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
     VALUES (id, var_accomodationTypeCode, var_institutionid, var_location, var_distanceToCampus, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
 	ret_success = true;
 	ret_accomodationid = id;
+    ELSE
+		ret_success = false;
+		ret_accomodationid = '00000000-0000-0000-0000-000000000000';
+	END IF;
 END;
 $BODY$;
 
 /* ---- Add Notes Function ---- */
 /* TODO: Error handling for duplicates */
-CREATE OR REPLACE FUNCTION public.addnotes(
-	var_moduleid uuid,
+CREATE OR REPLACE FUNCTION public.addnote(
+	var_modulecode character varying,
 	OUT ret_success bool,
 	OUT ret_noteid uuid)
     RETURNS record
@@ -533,11 +563,21 @@ CREATE OR REPLACE FUNCTION public.addnotes(
 AS $BODY$
 DECLARE
 	id uuid := uuid_generate_v4();
+    var_moduleid uuid;
 BEGIN
+IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
+    SELECT m.id
+    INTO var_moduleid 
+    FROM public.Module m  
+    WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
 INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
     VALUES (id, var_moduleid, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
 	ret_success = true;
 	ret_noteid = id;
+    ELSE
+		ret_success = false;
+		ret_noteid = '00000000-0000-0000-0000-000000000000';
+	END IF;
 END;
 $BODY$;
 
@@ -715,6 +755,110 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Delete Textbook by id ---- */
+
+CREATE OR REPLACE FUNCTION public.deletetextbook(
+	var_textbookid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Textbook t WHERE t.id = var_textbookid) THEN
+        UPDATE public.Textbook
+        SET isdeleted = true 
+        WHERE var_textbookid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
+/* ---- Delete Tutor by id ---- */
+
+CREATE OR REPLACE FUNCTION public.deletetutor(
+	var_tutorid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Tutor t WHERE t.id = var_tutorid) THEN
+        UPDATE public.Tutor
+        SET isdeleted = true 
+        WHERE var_tutorid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
+/* ---- Delete Accomodation by id ---- */
+
+CREATE OR REPLACE FUNCTION public.deleteaccomodation(
+	var_accomodationid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Accomodation a WHERE a.id = var_accomodationid) THEN
+        UPDATE public.Accomodation
+        SET isdeleted = true 
+        WHERE var_accomodationid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
+/* ---- Delete Note by id ---- */
+
+CREATE OR REPLACE FUNCTION public.deletenote(
+	var_noteid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Notes n WHERE n.id = var_noteid) THEN
+        UPDATE public.Notes
+        SET isdeleted = true 
+        WHERE var_noteid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
 /* ---- Get Textbooks by Filter Function ---- */
 CREATE OR REPLACE FUNCTION public.gettextbookbyfilter(
 	var_modulecode character varying,
@@ -772,7 +916,7 @@ CREATE OR REPLACE FUNCTION public.getaccomodationbyfilter(
     var_institutionname character varying,
     var_location character varying,
     var_distancetocampus character varying)
-    RETURNS TABLE(institution character varying, accomodationtypecode character varying, location character varying, distancetocampus character varying) 
+    RETURNS TABLE(id uuid, institution character varying, accomodationtypecode character varying, location character varying, distancetocampus character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -782,7 +926,7 @@ CREATE OR REPLACE FUNCTION public.getaccomodationbyfilter(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT i.name, a.accomodationtypecode, a.location, a.distancetocampus
+	SELECT a.id, i.name, a.accomodationtypecode, a.location, a.distancetocampus
     FROM public.Accomodation a
 	INNER JOIN public.Institution i  
 	ON i.id = a.institutionid AND i.isdeleted = false
@@ -811,6 +955,89 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Update Textbook Function ---- */
+CREATE OR REPLACE FUNCTION public.updatetextbook(
+	var_textbookid uuid,
+	var_modulecode character varying,
+	var_name character varying,
+	var_edition character varying,
+	var_quality character varying,
+	var_author character varying,
+	OUT res_updated boolean,
+	OUT res_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+var_moduleid uuid;
+BEGIN
+IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
+SELECT m.id
+    INTO var_moduleid 
+    FROM public.Module m  
+    WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
+	IF EXISTS (SELECT 1 FROM public.textbook t WHERE t.isdeleted = true AND t.id = var_textbookid) THEN
+		res_updated := false;
+		res_error := 'This Textbook is deleted! Update Failed!';
+    	ELSE
+        	UPDATE public.Textbook t
+   	    	SET moduleid = var_moduleid, name = var_name, edition = var_edition, quality = var_quality, author = var_author, modifieddatetime = CURRENT_TIMESTAMP 
+        	WHERE t.id = var_textbookid AND t.isdeleted = false;
+        	res_updated := true;
+	    	res_error := 'Textbook Successfully Updated';
+    	END IF;
+		ELSE 
+			res_updated := false;
+			res_error := 'This Module code does not exist!';
+		END if;
+END;
+$BODY$;
+
+/* ---- Update Tutor Function ---- */
+CREATE OR REPLACE FUNCTION public.updatetutor(
+	var_tutorid uuid,
+	var_modulecode character varying,
+	var_subject character varying,
+	var_yearcompleted character varying,
+	var_venue character varying,
+	var_notesincluded boolean,
+	var_terms character varying,
+	OUT res_updated boolean,
+	OUT res_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+        COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+var_moduleid uuid;
+BEGIN
+IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
+SELECT m.id
+    INTO var_moduleid 
+    FROM public.Module m  
+    WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
+	IF EXISTS (SELECT 1 FROM public.tutor t WHERE t.isdeleted = true AND t.id = var_tutorid) THEN
+		res_updated := false;
+		res_error := 'This Tutor is deleted! Update Failed!';
+    	ELSE
+        	UPDATE public.Tutor t
+   	    	SET moduleid = var_moduleid, subject= var_subject, yearcompleted = var_yearcompleted, venue = var_venue, notesincluded = var_notesincluded, terms = var_terms, modifieddatetime = CURRENT_TIMESTAMP 
+        	WHERE t.id = var_tutorid AND t.isdeleted = false;
+        	res_updated := true;
+	    	res_error := 'Tutor Successfully Updated';
+    	END IF;
+		ELSE 
+			res_updated := false;
+			res_error := 'This Module code does not exist!';
+		END if;
+END;
+$BODY$;
 /* ---- Get Advertisements by Selling or Looking for Function ---- */
 
 CREATE OR REPLACE FUNCTION public.getadvertisementbyposttype(
@@ -862,6 +1089,88 @@ IF EXISTS (SELECT 1 FROM public.User u WHERE u.email = var_email) THEN
 END;
 $BODY$;
 
+
+
+/* ---- Update Accomodation Function ---- */
+
+CREATE OR REPLACE FUNCTION public.updateaccomodation(
+	var_accomodationid uuid,
+	var_accomodationtypecode character varying,
+	var_institutionname character varying,
+	var_location character varying,
+	var_distancetocampus character varying,
+	OUT res_updated boolean,
+	OUT res_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+var_institutionid uuid;
+BEGIN
+IF EXISTS (SELECT 1 FROM public.institution i WHERE i.name = var_institutionname AND i.isdeleted = false) THEN
+SELECT i.id
+    INTO var_institutionid
+    FROM public.Institution i  
+    WHERE i.name = var_institutionname AND i.isdeleted = false;
+	IF EXISTS (SELECT 1 FROM public.Accomodation a WHERE a.isdeleted = true AND a.id = var_accomodationid) THEN
+		res_updated := false;
+		res_error := 'This Accomodation is deleted! Update Failed!';
+    	ELSE
+        	UPDATE public.Accomodation a
+   	    	SET accomodationtypecode = var_accomodationTypeCode, institutionid = var_institutionid, location = var_location, distancetocampus = var_distanceToCampus, modifieddatetime = CURRENT_TIMESTAMP 
+        	WHERE a.id = var_accomodationid AND a.isdeleted = false;
+        	res_updated := true;
+	    	res_error := 'Accomodation Successfully Updated';
+    	END IF;
+		ELSE 
+			res_updated := false;
+			res_error := 'This Institution does not exist!';
+		END if;
+END;
+$BODY$;
+
+/* ---- Update Note Function ---- */
+CREATE OR REPLACE FUNCTION public.updatenote(
+	var_noteid uuid,
+	var_modulecode character varying,
+	OUT res_updated bool,
+	OUT res_error character varying
+    )
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+var_moduleid uuid;
+BEGIN
+IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
+SELECT m.id
+    INTO var_moduleid 
+    FROM public.Module m  
+    WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
+	IF EXISTS (SELECT 1 FROM public.Notes n WHERE n.isdeleted = true AND n.id = var_noteid) THEN
+		res_updated := false;
+		res_error := 'This Note is deleted! Update Failed!';
+    	ELSE
+        	UPDATE public.Notes n
+   	    	SET moduleid = var_moduleid, modifieddatetime = CURRENT_TIMESTAMP 
+        	WHERE n.id = var_noteid AND n.isdeleted = false;
+        	res_updated := true;
+	    	res_error := 'Note Successfully Updated';
+    	END IF;
+		ELSE 
+			res_updated := false;
+			res_error := 'This Module code does not exist!';
+		END if;
+END;
+$BODY$;
 
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
@@ -938,48 +1247,48 @@ INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted
 VALUES ('888b571a-1819-48c8-a8f1-27686b55eb3b', '65f21344-e49e-4f29-bccd-a7e39056d3f9', 'Industrial Law Advanced', 'ILB122', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 /* ---- TEXTBOOKS ---- */
-SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Strategy Principles', '1', 'Used', 'Franklin James');
-SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Strategy Principles', '1', 'New', 'Franklin James');
-SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Logistics Principles', '3', 'Used', 'Franklin James');
-SELECT public.addtextbook('2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Logistics Principles', '2', 'Used', 'Franklin James');
+SELECT public.addtextbook('OBS110', 'Business Strategy Principles', '1', 'Used', 'Franklin James');
+SELECT public.addtextbook('OBS110', 'Business Strategy Principles', '1', 'New', 'Franklin James');
+SELECT public.addtextbook('OBS120', 'Business Logistics Principles', '3', 'Used', 'Franklin James');
+SELECT public.addtextbook('OBS120', 'Business Logistics Principles', '2', 'Used', 'Franklin James');
 
-SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineer Structures Principles', '1', 'New', 'Thomas Edison');
-SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineer Structures Advanced', '1', 'New', 'Thomas Edison');
-SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineer Structures Principles', '1', 'New', 'Roberto Edgar L');
-SELECT public.addtextbook('433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Business Structures Advanced', '1', 'New', 'Roberto Edgar L');
+SELECT public.addtextbook('ENG111', 'Engineer Structures Principles', '1', 'New', 'Thomas Edison');
+SELECT public.addtextbook('ENG111', 'Engineer Structures Advanced', '1', 'New', 'Thomas Edison');
+SELECT public.addtextbook('ENG122', 'Engineer Structures Principles', '1', 'New', 'Roberto Edgar L');
+SELECT public.addtextbook('ENG122', 'Business Structures Advanced', '1', 'New', 'Roberto Edgar L');
 
 
 /* ---- TUTORS ---- */ 
-SELECT public.addtutor('2e901148-ae96-4158-a92a-3c6f371d1ea1','Business Management','2018','Campus',false,'Per Lesson');
-SELECT public.addtutor('2e901148-ae96-4158-a92a-3c6f371d1ea1','Business Management','2019','Both',true,'Per Lesson');
-SELECT public.addtutor('2e901148-ae96-4158-a92a-3c6f371d1ea1','Business Logistics','2019','Both',true,'Minimum 5 Lessons');
+SELECT public.addtutor('OBS110','Business Management','2018','Campus',false,'Per Lesson');
+SELECT public.addtutor('OBS110','Business Management','2019','Both',true,'Per Lesson');
+SELECT public.addtutor('OBS120','Business Logistics','2019','Both',true,'Minimum 5 Lessons');
 
-SELECT public.addtutor('433ce13a-22ce-4f53-8a75-c7b8e190f15f','Engineering','2018','Campus',true,'Per Lesson');
-SELECT public.addtutor('433ce13a-22ce-4f53-8a75-c7b8e190f15f','Engineering Structures','2018','At Home',false,'Minimum 10 Lessons');
-SELECT public.addtutor('433ce13a-22ce-4f53-8a75-c7b8e190f15f','Engineering','2019','Campus',false,'Per Lesson');
+SELECT public.addtutor('ENG111','Engineering','2018','Campus',true,'Per Lesson');
+SELECT public.addtutor('ENG111','Engineering Structures','2018','At Home',false,'Minimum 10 Lessons');
+SELECT public.addtutor('ENG122','Engineering','2019','Campus',false,'Per Lesson');
 
 
 /* ---- ACCOMODATION ---- */
-SELECT public.addaccomodation('APT', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Hatfield', '1.2Km');
-SELECT public.addaccomodation('COM', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '2.8Km');
-SELECT public.addaccomodation('HSE', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '4.8Km');
-SELECT public.addaccomodation('GDC', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Pretoria CBD', '8.5Km');
+SELECT public.addaccomodation('APT', 'University of Pretoria', 'Hatfield', '1.2Km');
+SELECT public.addaccomodation('COM', 'University of Pretoria', 'Brooklyn', '2.8Km');
+SELECT public.addaccomodation('HSE', 'University of Pretoria', 'Brooklyn', '4.8Km');
+SELECT public.addaccomodation('GDC', 'University of Pretoria', 'Pretoria CBD', '8.5Km');
 
-SELECT public.addaccomodation('APT', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '5.4Km');
-SELECT public.addaccomodation('COM', 'fb901315-d971-4347-880b-bc8c6292386f', 'Main Campus', '0.5Km');
-SELECT public.addaccomodation('HSE', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '8.9Km');
-SELECT public.addaccomodation('GDC', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', '1.7Km');
+SELECT public.addaccomodation('APT', 'University of Johannesburg', 'Johannesburg CBD', '5.4Km');
+SELECT public.addaccomodation('COM', 'University of Johannesburg', 'Main Campus', '0.5Km');
+SELECT public.addaccomodation('HSE', 'University of Johannesburg', 'Johannesburg CBD', '8.9Km');
+SELECT public.addaccomodation('GDC', 'University of Johannesburg', 'Auckland Park', '1.7Km');
 
 /* ---- NOTES ---- */
-SELECT public.addnotes('2e901148-ae96-4158-a92a-3c6f371d1ea1');
-SELECT public.addnotes('e47aa688-d18b-4c88-a93f-ecc5836a88f0');
-SELECT public.addnotes('e47aa688-d18b-4c88-a93f-ecc5836a88f0');
-SELECT public.addnotes('433ce13a-22ce-4f53-8a75-c7b8e190f15f');
-SELECT public.addnotes('433ce13a-22ce-4f53-8a75-c7b8e190f15f');
-SELECT public.addnotes('433ce13a-22ce-4f53-8a75-c7b8e190f15f');
-SELECT public.addnotes('7c0bc68a-b123-46ca-8d04-d91d7a1c0768');
-SELECT public.addnotes('7c0bc68a-b123-46ca-8d04-d91d7a1c0768');
-SELECT public.addnotes('9b137496-d030-4e4d-b85b-2ea334e0179d');
+SELECT public.addnote('OBS110');
+SELECT public.addnote('OBS120');
+SELECT public.addnote('ENG111');
+SELECT public.addnote('ENG111');
+SELECT public.addnote('LLB120');
+SELECT public.addnote('EKN110');
+SELECT public.addnote('EKN110');
+SELECT public.addnote('EKN110');
+SELECT public.addnote('ILB111');
 
 /* ---- FEATURES ---- */
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)

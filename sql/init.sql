@@ -224,6 +224,16 @@ CREATE TABLE public.Event (
     ModifiedDateTime timestamp
 );
 
+CREATE TABLE public.ForgetPassword (
+    ID uuid PRIMARY KEY NOT NULL,
+    UserID uuid NOT NULL,
+    VerificationID uuid NOT NULL,
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
+
 /* ---- Creating all functions needed for CRUD functions to be used by the CRUD service ---- */
 
 
@@ -819,6 +829,38 @@ BEGIN
 END;
 $BODY$;
 
+/* ---- Handle Forgot Password Function ---- */
+
+
+CREATE OR REPLACE FUNCTION public.forgotpassword(
+	var_email character varying,
+	OUT res_email character varying,
+	OUT res_password character varying,
+	OUT res_error character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+AS $BODY$
+DECLARE
+DECLARE
+test_password character varying = array_to_string(ARRAY(SELECT chr((65 + round(random() * 25)) :: integer) 
+FROM generate_series(1,8)), '');
+BEGIN
+IF EXISTS (SELECT 1 FROM public.User u WHERE u.email = var_email) THEN 
+ UPDATE public.User
+ SET password = test_password, modifieddatetime = CURRENT_TIMESTAMP
+ WHERE var_email = email;
+    res_email = var_email;
+    res_password = test_password;
+	res_error := 'A new password is being sent to you now, please check your email';
+    ELSE
+        res_email = 'None';
+        res_password = 'None';
+        res_error = 'A new password cannot be granted at this time as an appropriate email address has not been provided';
+    END IF;
+END;
+$BODY$;
 
 
 /* ---- Populating user table with default users. ---- */

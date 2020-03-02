@@ -1194,11 +1194,23 @@ CREATE OR REPLACE FUNCTION public.getcardmainimage(
     VOLATILE 
 AS $BODY$
 BEGIN
-	SELECT PathString, FileName
-    INTO ret_filepath, ret_filename
+	
+	
+
+	IF EXISTS (SELECT 1
     FROM public.AdvertisementImage ai
     INNER JOIN public.Image i ON i.ID = ai.ImageID AND i.IsMainImage = true
-    WHERE ai.AdvertisingID = var_entityid;
+    WHERE ai.AdvertisingID = var_entityid) 
+	THEN
+		SELECT PathString, FileName
+		INTO ret_filepath, ret_filename
+		FROM public.AdvertisementImage ai
+		INNER JOIN public.Image i ON i.ID = ai.ImageID AND i.IsMainImage = true
+		WHERE ai.AdvertisingID = var_entityid;
+	ELSE 
+		ret_filepath = '';
+		ret_filename = '';
+	END IF;
 END;
 $BODY$;
 

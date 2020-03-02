@@ -1227,6 +1227,7 @@ $BODY$;
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
 SELECT public.registeruser('Blairzee', '!Blairzee', 'Blaire', 'Baldwin', 'Blaire24@gmail.com');
+SELECT public.registeruser('JohanStemmet', '!stemmet', 'Johan', 'Stemmet', 'manie.gilliland@gmail.com');
 
 /* ---- Populating lookup tables with default values. ---- */
 

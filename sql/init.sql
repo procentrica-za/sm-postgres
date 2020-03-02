@@ -6,6 +6,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE public.Image (
     ID uuid PRIMARY KEY NOT NULL,
     PathString Varchar(255) NOT NULL,
+    FileName Varchar(255) NOT NULL,
+    IsMainImage Boolean DEFAULT(false),
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
@@ -223,6 +225,14 @@ CREATE TABLE public.Event (
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
+/*
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------FUNCTIONS---------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+*/
 
 /* ---- Creating all functions needed for CRUD functions to be used by the CRUD service ---- */
 
@@ -1130,6 +1140,47 @@ SELECT m.id
 END;
 $BODY$;
 
+
+CREATE OR REPLACE FUNCTION public.getcardmainimage(
+	var_entityid uuid,
+	OUT ret_filepath character varying,
+	OUT ret_filename character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+	SELECT PathString, FileName
+    INTO ret_filepath, ret_filename
+    FROM public.AdvertisementImage ai
+    INNER JOIN public.Image i ON i.ID = ai.ImageID AND i.IsMainImage = true
+    WHERE ai.AdvertisingID = var_entityid;
+END;
+$BODY$;
+
+
+CREATE OR REPLACE FUNCTION public.getcardmainimagelist(
+	VARIADIC params uuid[])
+    RETURNS TABLE(entityid uuid, pathstring varchar(256), filename varchar(256))
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+	
+	RETURN QUERY
+	SELECT ai.AdvertisingID , i.pathstring, i.filename
+    FROM public.AdvertisementImage ai
+    INNER JOIN public.Image i ON i.ID = ai.ImageID AND i.isdeleted = false
+    WHERE ai.AdvertisingID = ANY (params) AND i.IsMainImage = true;
+	
+END;
+$BODY$;
+
+
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
@@ -1303,7 +1354,33 @@ VALUES ('c2de2f67-ec44-4998-91ac-0a7f4f117350', '56c27ab0-eed7-4aa5-8b0a-e4082c8
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('00dfc25a-cb4c-4be5-9bdc-347db41dd68e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'dce1c0bf-63ef-4d06-a9c4-7e4cce806823', '900','Default Notes Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
+--INSERT DEFAULT IMAGES
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7' ,'3f4a9a4c-e9af-4b6a-8f77-7477e144d5e4', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('3f4a9a4c-e9af-4b6a-8f77-7477e144d5e4', 'b0bb5a9a-3c6f-48aa-b299-a575b8fd0fe9', 'myimage.png', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7' ,'1c75c652-9ea5-464e-a4ba-8e24c745d041', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('1c75c652-9ea5-464e-a4ba-8e24c745d041', '20bae2f7-760e-4df2-9996-094da5dfa072', 'image2.jpeg', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7' ,'3f0bcedb-29a6-4735-a01c-392d0187cbce', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('3f0bcedb-29a6-4735-a01c-392d0187cbce', 'd2a0cca1-6395-4110-8363-5414159e802f', 'image3.jpeg', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4' ,'e3d7f755-82c8-413a-a597-7de860c18892', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('e3d7f755-82c8-413a-a597-7de860c18892', '14c1974d-ce18-45d0-a13e-58ab7919129b', 'myimage.png', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4' ,'4a472bf2-5416-443b-a8b6-5e06a6121332', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('4a472bf2-5416-443b-a8b6-5e06a6121332', 'cab574b7-dae0-49d0-bb11-12a966374b26', 'image2.jpeg', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4' ,'c2b801b3-9faf-42bc-8de7-cad34011d0b8', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e6c61a', 'image3.jpeg', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

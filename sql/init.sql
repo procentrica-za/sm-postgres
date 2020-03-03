@@ -712,21 +712,55 @@ BEGIN
 END;
 $BODY$;
 
-/* ---- Get Advertisements by ad type Function ---- */
+/* ---- Get Textbook Advertisements Ammount dictated by varibale sent to the function. ---- */
 
-CREATE OR REPLACE FUNCTION public.getadvertisementbytype(
-	var_advertisementtype character varying)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+CREATE OR REPLACE FUNCTION public.gettextookadvertisements(
+	var_limit numeric
+	)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying) 
     LANGUAGE 'plpgsql'
+
     COST 100
-    VOLATILE
+    VOLATILE 
     ROWS 1000
+    
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT u.id, u.userid, u.isselling, u.advertisementtype, u.entityid, u.price, u.description
-    FROM public.Advertisement u
-    WHERE var_advertisementtype  = u.advertisementtype AND isdeleted = false;
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode
+    FROM public.Advertisement as a
+	INNER JOIN public.Textbook as t 
+	ON a.entityid = t.id
+	INNER JOIN public.Module as m
+	ON m.id = t.moduleid AND m.isdeleted = false
+	WHERE 'TXB' = a.advertisementtype AND a.isdeleted = false
+	LIMIT var_limit;
+END;
+$BODY$;
+
+/* ---- Get Tutor Advertisements Ammount dictated by varibale sent to the function. ---- */
+
+CREATE OR REPLACE FUNCTION public.gettextookadvertisements(
+	var_limit numeric
+	)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+    
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode
+    FROM public.Advertisement as a
+	INNER JOIN public.Textbook as t 
+	ON a.entityid = t.id
+	INNER JOIN public.Module as m
+	ON m.id = t.moduleid AND m.isdeleted = false
+	WHERE 'TXB' = a.advertisementtype AND a.isdeleted = false
+	LIMIT var_limit;
 END;
 $BODY$;
 
@@ -1311,48 +1345,75 @@ INSERT INTO public.Module(ID,FacultyID,Name,ModuleCode,CreatedDateTime,IsDeleted
 VALUES ('888b571a-1819-48c8-a8f1-27686b55eb3b', '65f21344-e49e-4f29-bccd-a7e39056d3f9', 'Industrial Law Advanced', 'ILB122', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 /* ---- TEXTBOOKS ---- */
-SELECT public.addtextbook('OBS110', 'Business Strategy Principles', '1', 'Used', 'Franklin James');
-SELECT public.addtextbook('OBS110', 'Business Strategy Principles', '1', 'New', 'Franklin James');
-SELECT public.addtextbook('OBS120', 'Business Logistics Principles', '3', 'Used', 'Franklin James');
-SELECT public.addtextbook('OBS120', 'Business Logistics Principles', '2', 'Used', 'Franklin James');
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('382e4fbb-5b63-4a1a-b3ee-162e256e861b','2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Strategy Principles', '1', 'Used' , 'Franklin James', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('c05d560b-1ee2-4077-b53c-4c4bea5865cd','2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Implementation Principles', '2', 'New' , 'Johan Rupert', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('7dda5091-4a6e-42dd-b6e1-7ccc8be7e5cd','e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Business Strategy Advanced', '1', 'Used' , 'Jon Snow', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('47db44d5-e0ae-4853-93e3-b7c85ff5b65c','e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Business Implementation Advanced', '3', 'Used' , 'Swole Casarole', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('25eceef0-eef4-4ea5-bc06-abc1ffce0b6d','433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineering Principles', '1', 'Used' , 'Isaac Newton', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('0be47249-94f0-463b-bec2-1b80b224c1d3','433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Calculus Introduction', '4', 'New' , 'Albert Einstein', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('46bd986a-5f7d-4b4a-b972-08518315143b','69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Engineering Advanced', '6', 'Used' , 'Isaac Newton', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES('64a4c6c0-bf8e-4728-a650-579003bc6857','69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Calculus Follow-up', '3', 'New' , 'George Shabangu', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
-SELECT public.addtextbook('ENG111', 'Engineer Structures Principles', '1', 'New', 'Thomas Edison');
-SELECT public.addtextbook('ENG111', 'Engineer Structures Advanced', '1', 'New', 'Thomas Edison');
-SELECT public.addtextbook('ENG122', 'Engineer Structures Principles', '1', 'New', 'Roberto Edgar L');
-SELECT public.addtextbook('ENG122', 'Business Structures Advanced', '1', 'New', 'Roberto Edgar L');
 
 
 /* ---- TUTORS ---- */ 
-SELECT public.addtutor('OBS110','Business Management','2018','Campus',false,'Per Lesson');
-SELECT public.addtutor('OBS110','Business Management','2019','Both',true,'Per Lesson');
-SELECT public.addtutor('OBS120','Business Logistics','2019','Both',true,'Minimum 5 Lessons');
-
-SELECT public.addtutor('ENG111','Engineering','2018','Campus',true,'Per Lesson');
-SELECT public.addtutor('ENG111','Engineering Structures','2018','At Home',false,'Minimum 10 Lessons');
-SELECT public.addtutor('ENG122','Engineering','2019','Campus',false,'Per Lesson');
-
+INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('0339d90d-bb7b-4054-905a-15feb960f53e', 'Business Management', '2017', '2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Campus', true, '5 Lessons', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('07783074-3f1d-4ae3-b27b-c075f34aacf9', 'Business Management', '2018', '2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Both', true, 'Pay per Lesson', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('c184c2b9-4039-4b6f-964c-d95b0b9a358c', 'Business Management Advanced', '2019', 'e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Home', true, 'Whole Semester', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('7e0e437c-aa29-488f-9202-36d281e70c40', 'Engineering', '2016', '433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Campus', true, '10 Lessons', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('b8a5ee1b-0696-4d22-8e1d-d325a673980c', 'Engineering Advanced ', '2017', '69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Home', true, 'Exam Preparations', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', 'Engineering Advanced', '2018', '69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Campus', true, 'Contact for details', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 /* ---- ACCOMODATION ---- */
-SELECT public.addaccomodation('APT', 'University of Pretoria', 'Hatfield', '1.2Km');
-SELECT public.addaccomodation('COM', 'University of Pretoria', 'Brooklyn', '2.8Km');
-SELECT public.addaccomodation('HSE', 'University of Pretoria', 'Brooklyn', '4.8Km');
-SELECT public.addaccomodation('GDC', 'University of Pretoria', 'Pretoria CBD', '8.5Km');
-
-SELECT public.addaccomodation('APT', 'University of Johannesburg', 'Johannesburg CBD', '5.4Km');
-SELECT public.addaccomodation('COM', 'University of Johannesburg', 'Main Campus', '0.5Km');
-SELECT public.addaccomodation('HSE', 'University of Johannesburg', 'Johannesburg CBD', '8.9Km');
-SELECT public.addaccomodation('GDC', 'University of Johannesburg', 'Auckland Park', '1.7Km');
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('1193447d-5dd6-493f-8b0c-846c88f4e92c', 'APT', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Hatfield', '1.2Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('d4b1ef8d-cac8-4793-96b9-51f1024affc7', 'COM', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '2.8Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('6032734b-fe59-4be7-b953-c864ad8ac0b7', 'HSE', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '4.8Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('845f4a14-617b-4010-9dc4-e9cd84f47913', 'GDC', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Pretoria CBD', '8.5Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('92842317-c6c6-4bac-9b30-aa85fba4af0a', 'APT', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '5.4Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('53eaf527-a09b-4fb0-93b7-558ab1e816b0', 'COM', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', '0.5Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('0a9e2831-1783-4926-8c38-412fba6f7e11', 'HSE', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', '8,9Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('8bf04861-4b06-4ea5-a0ca-63cc839c3afa', 'GDC', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '1.8Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 /* ---- NOTES ---- */
-SELECT public.addnote('OBS110');
-SELECT public.addnote('OBS120');
-SELECT public.addnote('ENG111');
-SELECT public.addnote('ENG111');
-SELECT public.addnote('LLB120');
-SELECT public.addnote('EKN110');
-SELECT public.addnote('EKN110');
-SELECT public.addnote('EKN110');
-SELECT public.addnote('ILB111');
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '2e901148-ae96-4158-a92a-3c6f371d1ea1', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('0d09d6dd-dcb3-4202-80d6-098c2901e14e', '2e901148-ae96-4158-a92a-3c6f371d1ea1', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('f654d998-5040-4288-9856-81dd3e713ff2', 'e47aa688-d18b-4c88-a93f-ecc5836a88f0', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('dc91d48c-dae9-4cc7-a147-a13c6c133143', 'e47aa688-d18b-4c88-a93f-ecc5836a88f0', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('295e33f3-45f1-4440-9737-ba44cbdb50ac', '433ce13a-22ce-4f53-8a75-c7b8e190f15f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('187dcbb0-2ac1-43a0-b6fc-7c687ee756c6', '433ce13a-22ce-4f53-8a75-c7b8e190f15f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('cc795ced-d16c-4cbb-bf8e-712596b4f67d', '69ba5241-2059-40b0-b02a-7d983d01b6e5', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('602e0f6f-3277-4348-8111-528286d7c96b', '69ba5241-2059-40b0-b02a-7d983d01b6e5', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
 
 /* ---- FEATURES ---- */
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
@@ -1366,15 +1427,17 @@ INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,
 VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 /* ---- ADVERTISEMENTS ---- */
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '07643974-4bad-45a2-9431-a10308c66c5d', '450','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '382e4fbb-5b63-4a1a-b3ee-162e256e861b', '450','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '07643974-4bad-45a2-9431-a10308c66c5d', '600','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '7dda5091-4a6e-42dd-b6e1-7ccc8be7e5cd', '600','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('4eafce73-791d-46c4-9c24-9c99f9352459', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '07643974-4bad-45a2-9431-a10308c66c5d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('4eafce73-791d-46c4-9c24-9c99f9352459', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('0f3f0188-2130-4369-af37-fc50242a39db', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '07643974-4bad-45a2-9431-a10308c66c5d', '180','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('0f3f0188-2130-4369-af37-fc50242a39db', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '46bd986a-5f7d-4b4a-b972-08518315143b', '180','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('8964f09f-27ca-4132-9a8a-25bdb9d00737', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '07643974-4bad-45a2-9431-a10308c66c5d', '900','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('8964f09f-27ca-4132-9a8a-25bdb9d00737', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '64a4c6c0-bf8e-4728-a650-579003bc6857', '900','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', 'a019c7ad-9bc4-4eb0-ab08-40fecd36a1d5', '450','Default Tutoring Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);

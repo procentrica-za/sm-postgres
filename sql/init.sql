@@ -327,7 +327,6 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.updateuser(
 	var_userid uuid,
 	var_username character varying,
-	var_password character varying,
 	var_name character varying,
 	var_surname character varying,
 	var_email character varying,
@@ -335,10 +334,8 @@ CREATE OR REPLACE FUNCTION public.updateuser(
 	OUT res_error character varying)
     RETURNS record
     LANGUAGE 'plpgsql'
-
     COST 100
-    VOLATILE 
-    
+    VOLATILE
 AS $BODY$
 DECLARE
 BEGIN
@@ -353,7 +350,7 @@ IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id 
 			    res_error := 'This User is deleted!';
 				    ELSE
     				    UPDATE public.User
-   				 	    SET username = var_username, password = var_password, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP 
+   				 	    SET username = var_username, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP
     				    WHERE var_userid = id;
     				    res_updated := true;
 					    res_error := 'User Successfully Updated';

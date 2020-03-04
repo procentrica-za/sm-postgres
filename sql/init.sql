@@ -358,7 +358,7 @@ IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id 
                 END IF;
 		END IF;
 END;
-$BODY$
+$BODY$;
 
 /* ---- Delete User on ID Function ---- */
 

@@ -235,6 +235,37 @@ CREATE TABLE public.ForgetPassword (
     ModifiedDateTime timestamp
 );
 
+/* ---- Create tables for Messaging ---- */
+CREATE TABLE public.Chat (
+    ID uuid PRIMARY KEY NOT NULL,
+    SellerID uuid NOT NULL,
+    BuyerID uuid NOT NULL,
+    CONSTRAINT selleridfkey FOREIGN KEY (SellerID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT buyeridfkey FOREIGN KEY (BuyerID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    IsActive Boolean DEFAULT(false),
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
+CREATE TABLE public.Message (
+    ID uuid PRIMARY KEY NOT NULL,
+    ChatID uuid NOT NULL,
+    CONSTRAINT buyeridfkey FOREIGN KEY (ChatID)
+        REFERENCES public.Chat (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    AuthorID uuid NOT NULL,
+    Message VARCHAR(1000) not null,
+    MessageDate timestamp,
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
 
 /*
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1352,6 +1383,60 @@ BEGIN
 END;
 $BODY$;
 
+
+/* ---------------------------------------------------------------------
+------------------------------------------------------------------------
+-------------------------Messaging functions----------------------------
+------------------------------------------------------------------------
+----------------------------------------------------------------------*/
+
+/*-------           Start chat function    ------*/
+CREATE OR REPLACE FUNCTION public.addchat(
+	var_sellerid uuid,
+	var_buyerid uuid,
+	OUT ret_success bool,
+	OUT ret_chatid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+BEGIN
+	INSERT INTO public.Chat(ID, SellerID, BuyerID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_sellerid, var_buyerid,'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    ret_success := true;
+    ret_chatid := id;
+END;
+$BODY$;
+
+
+/* -------Delete chat functon ----------- */
+CREATE OR REPLACE FUNCTION public.deletechat(
+	var_chatid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Chat u WHERE u.id = var_chatid) THEN
+        UPDATE public.Chat
+        SET isdeleted = true, isactive = false, modifieddatetime = CURRENT_TIMESTAMP  
+        WHERE var_chatid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
 
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');

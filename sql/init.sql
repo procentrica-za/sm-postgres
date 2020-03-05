@@ -1458,6 +1458,24 @@ BEGIN
 END;
 $BODY$;
 
+/* -----View Messages function -------- */
+CREATE OR REPLACE FUNCTION public.getchat(
+	var_chatid uuid)
+    RETURNS TABLE(id uuid, authorid uuid, message character varying, messagedate character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT c.id, c.authorid, c.message, c.messagedate
+    FROM public.Message as c
+	WHERE c.isdeleted = false AND c.chatid = var_chatid;
+END;
+$BODY$;
+
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
@@ -1701,6 +1719,15 @@ VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f622
 INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
 VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('711f58f8-f469-4a44-b83a-7f21d1f24918', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
 VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+
+/* ---- INSERT MESSAGE DATA ---- */
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this still works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'Yes this is great', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

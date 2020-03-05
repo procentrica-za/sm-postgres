@@ -1591,9 +1591,13 @@ INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted,
 VALUES ('PAR','Parking', 'The Property has parking.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
-/* ---- DEFAULT USER FOR ADVERTISEMENTS ---- */
+/* ---- USERS ---- */
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('7bb9d62d-c3fa-4e63-9f07-061f6226cebb','Jack','123456','Gerard','Botes','jack@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('711f58f8-f469-4a44-b83a-7f21d1f24918','James','123456','Gerard','Botes','james@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 /* ---- ADVERTISEMENTS ---- */
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '382e4fbb-5b63-4a1a-b3ee-162e256e861b', '450','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -1669,3 +1673,14 @@ INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, M
 VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4' ,'c2b801b3-9faf-42bc-8de7-cad34011d0b8', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
 VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e6c61a', 'image3.jpeg', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+
+/* ---- INSERT CHAT DATA ---- */
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

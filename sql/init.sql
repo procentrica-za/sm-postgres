@@ -255,11 +255,14 @@ CREATE TABLE public.Chat (
 CREATE TABLE public.Message (
     ID uuid PRIMARY KEY NOT NULL,
     ChatID uuid NOT NULL,
-    CONSTRAINT buyeridfkey FOREIGN KEY (ChatID)
+    CONSTRAINT chatidfkey FOREIGN KEY (ChatID)
         REFERENCES public.Chat (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     AuthorID uuid NOT NULL,
-    Message VARCHAR(1000) not null,
+    CONSTRAINT authoruseridfkey FOREIGN KEY (AuthorID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    Message Varchar(1000),
     MessageDate timestamp,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
@@ -1461,7 +1464,7 @@ $BODY$;
 /* -----View Messages function -------- */
 CREATE OR REPLACE FUNCTION public.getchat(
 	var_chatid uuid)
-    RETURNS TABLE(id uuid, authorid uuid, message character varying, messagedate character varying) 
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1469,10 +1472,56 @@ CREATE OR REPLACE FUNCTION public.getchat(
     ROWS 1000
 AS $BODY$
 BEGIN
-	RETURN QUERY
-	SELECT c.id, c.authorid, c.message, c.messagedate
-    FROM public.Message as c
-	WHERE c.isdeleted = false AND c.chatid = var_chatid;
+RETURN QUERY
+SELECT m.id, u.username, m.message, m.messagedate
+FROM public.Message as m
+INNER JOIN public.Chat as c
+ON m.chatid = c.id
+INNER JOIN public.User as u
+ON u.id = m.authorid 
+
+WHERE m.isdeleted = false AND c.id = var_chatid AND c.isactive = true AND m.authorid = u.id
+ORDER BY m.messagedate;
+END;
+$BODY$;
+
+
+
+
+/* -------- Add message ---------- */
+CREATE OR REPLACE FUNCTION public.sendmessage(
+	var_chatid uuid,
+	var_authorid uuid,
+	var_message character varying)
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
+    LANGUAGE 'plpgsql'
+
+     COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+DECLARE
+id uuid := uuid_generate_v4();
+BEGIN
+INSERT INTO public.Message(ID, ChatID,
+AuthorID, Message, MessageDate, CreatedDateTime,
+IsDeleted, ModifiedDateTime)
+VALUES (id, var_chatid,var_authorid, var_message,
+CURRENT_TIMESTAMP , CURRENT_TIMESTAMP,
+'false', CURRENT_TIMESTAMP);
+RETURN QUERY
+SELECT m.id, u.username, m.message, m.messagedate
+FROM public.Message as m
+INNER JOIN public.Chat as c
+ON m.chatid = c.id
+INNER JOIN public.User as u
+ON u.id = m.authorid 
+
+WHERE m.isdeleted = false AND c.id = var_chatid AND c.isactive = true AND m.authorid = u.id
+ORDER BY m.messagedate;
+
+
+
 END;
 $BODY$;
 

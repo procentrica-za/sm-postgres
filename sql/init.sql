@@ -235,6 +235,40 @@ CREATE TABLE public.ForgetPassword (
     ModifiedDateTime timestamp
 );
 
+/* ---- Create tables for Messaging ---- */
+CREATE TABLE public.Chat (
+    ID uuid PRIMARY KEY NOT NULL,
+    SellerID uuid NOT NULL,
+    BuyerID uuid NOT NULL,
+    CONSTRAINT selleridfkey FOREIGN KEY (SellerID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT buyeridfkey FOREIGN KEY (BuyerID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    IsActive Boolean DEFAULT(false),
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
+CREATE TABLE public.Message (
+    ID uuid PRIMARY KEY NOT NULL,
+    ChatID uuid NOT NULL,
+    CONSTRAINT chatidfkey FOREIGN KEY (ChatID)
+        REFERENCES public.Chat (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    AuthorID uuid NOT NULL,
+    CONSTRAINT authoruseridfkey FOREIGN KEY (AuthorID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    Message Varchar(1000),
+    MessageDate timestamp,
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
 
 /*
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1353,6 +1387,144 @@ END;
 $BODY$;
 
 
+/* ---------------------------------------------------------------------
+------------------------------------------------------------------------
+-------------------------Messaging functions----------------------------
+------------------------------------------------------------------------
+----------------------------------------------------------------------*/
+
+/*-------           Start chat function    ------*/
+CREATE OR REPLACE FUNCTION public.addchat(
+	var_sellerid uuid,
+	var_buyerid uuid,
+	OUT ret_success bool,
+	OUT ret_chatid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+BEGIN
+	INSERT INTO public.Chat(ID, SellerID, BuyerID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_sellerid, var_buyerid,'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    ret_success := true;
+    ret_chatid := id;
+END;
+$BODY$;
+
+
+/* -------Delete chat functon ----------- */
+CREATE OR REPLACE FUNCTION public.deletechat(
+	var_chatid uuid,
+	OUT res_deleted boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Chat u WHERE u.id = var_chatid) THEN
+        UPDATE public.Chat
+        SET isdeleted = true, isactive = false, modifieddatetime = CURRENT_TIMESTAMP  
+        WHERE var_chatid = id;
+        res_deleted := true;
+    ELSE
+        res_deleted := false;
+    END IF;
+    
+END;
+$BODY$;
+
+/* ---------- View active chats function  --------- */
+CREATE OR REPLACE FUNCTION public.getactivechats(
+	var_userid uuid)
+    RETURNS TABLE(id uuid, username character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT c.id, u.username
+    FROM public.Chat as c
+	INNER JOIN public.User as u 
+	ON c.sellerid = u.id 
+	WHERE c.isactive = true AND u.isdeleted = false AND u.id != var_userid;
+END;
+$BODY$;
+
+/* -----View Messages function -------- */
+CREATE OR REPLACE FUNCTION public.getchat(
+	var_chatid uuid)
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+RETURN QUERY
+SELECT m.id, u.username, m.message, m.messagedate
+FROM public.Message as m
+INNER JOIN public.Chat as c
+ON m.chatid = c.id
+INNER JOIN public.User as u
+ON u.id = m.authorid 
+
+WHERE m.isdeleted = false AND c.id = var_chatid AND c.isactive = true AND m.authorid = u.id
+ORDER BY m.messagedate;
+END;
+$BODY$;
+
+
+
+
+/* -------- Add message ---------- */
+CREATE OR REPLACE FUNCTION public.sendmessage(
+	var_chatid uuid,
+	var_authorid uuid,
+	var_message character varying)
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
+    LANGUAGE 'plpgsql'
+
+     COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+DECLARE
+id uuid := uuid_generate_v4();
+BEGIN
+INSERT INTO public.Message(ID, ChatID,
+AuthorID, Message, MessageDate, CreatedDateTime,
+IsDeleted, ModifiedDateTime)
+VALUES (id, var_chatid,var_authorid, var_message,
+CURRENT_TIMESTAMP , CURRENT_TIMESTAMP,
+'false', CURRENT_TIMESTAMP);
+RETURN QUERY
+SELECT m.id, u.username, m.message, m.messagedate
+FROM public.Message as m
+INNER JOIN public.Chat as c
+ON m.chatid = c.id
+INNER JOIN public.User as u
+ON u.id = m.authorid 
+
+WHERE m.isdeleted = false AND c.id = var_chatid AND c.isactive = true AND m.authorid = u.id
+ORDER BY m.messagedate;
+
+
+
+END;
+$BODY$;
+
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
@@ -1506,9 +1678,13 @@ INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted,
 VALUES ('PAR','Parking', 'The Property has parking.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
-/* ---- DEFAULT USER FOR ADVERTISEMENTS ---- */
+/* ---- USERS ---- */
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('7bb9d62d-c3fa-4e63-9f07-061f6226cebb','Jack','123456','Gerard','Botes','jack@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('711f58f8-f469-4a44-b83a-7f21d1f24918','James','123456','Gerard','Botes','james@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 /* ---- ADVERTISEMENTS ---- */
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '382e4fbb-5b63-4a1a-b3ee-162e256e861b', '450','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -1584,3 +1760,23 @@ INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, M
 VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4' ,'c2b801b3-9faf-42bc-8de7-cad34011d0b8', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
 VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e6c61a', 'image3.jpeg', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+
+/* ---- INSERT CHAT DATA ---- */
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+
+/* ---- INSERT MESSAGE DATA ---- */
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this still works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'Yes this is great', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

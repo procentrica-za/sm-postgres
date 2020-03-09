@@ -1453,11 +1453,13 @@ CREATE OR REPLACE FUNCTION public.getactivechats(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT c.id, u.username
+	SELECT c.id, COALESCE(s.username, b.username)
     FROM public.Chat as c
-	INNER JOIN public.User as u 
-	ON c.sellerid = u.id 
-	WHERE c.isactive = true AND u.isdeleted = false AND u.id != var_userid;
+	LEFT JOIN public.User as s 
+	ON c.sellerid = s.id AND s.isdeleted = false AND s.id != var_userid
+	LEFT JOIN public.User as b
+	ON c.buyerid = b.id AND b.isdeleted = false AND b.id != var_userid
+	WHERE c.isactive = true  AND (c.sellerid = var_userid OR c.buyerid = var_userid);
 END;
 $BODY$;
 

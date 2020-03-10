@@ -882,24 +882,106 @@ END;
 $BODY$;
 
 
-/* ---- Get Advertisement by User ID Function ---- */
+/* ---- Get Textbook Advertisement by User ID Function ---- */
 
-CREATE OR REPLACE FUNCTION public.getadvertisementbyuserid(
-	var_userid uuid)
-    RETURNS TABLE(advertisementid uuid, isselling boolean, advertisementtype character varying, entityid uuid, price numeric, description character varying)
+CREATE OR REPLACE FUNCTION public.gettextbookadvertisementsbyuserid(
+	var_userid uuid,
+	var_limit numeric,
+	var_isselling boolean)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying) 
     LANGUAGE 'plpgsql'
+
     COST 100
-    VOLATILE
+    VOLATILE 
     ROWS 1000
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT u.id, u.isselling, u.advertisementtype, u.entityid, u.price, u.description
-    FROM public.Advertisement u
-    WHERE var_userid  = u.userid AND isdeleted = false;
+    SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode
+    FROM public.Advertisement as a
+	INNER JOIN public.Textbook as t 
+	ON a.entityid = t.id
+	INNER JOIN public.Module as m
+	ON m.id = t.moduleid AND m.isdeleted = false
+	WHERE var_userid = a.userid AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false 
+	LIMIT var_limit;
 END;
 $BODY$;
 
+/* ---- Get Accomodation Advertisement by User ID Function ---- */
+CREATE OR REPLACE FUNCTION public.getaccomodationadvertisementsbyuserid(
+	var_userid uuid,
+	var_limit numeric,
+	var_isselling boolean)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus character varying, institution character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT ad.id, ad.userid, ad.isselling, ad.advertisementtype, ad.price, ad.description, ac.id, ac.accomodationtypecode, ac.location, ac.distancetocampus, i.name
+    FROM public.Advertisement as ad
+	INNER JOIN public.Accomodation as ac 
+	ON ad.entityid = ac.id
+	INNER JOIN public.Institution as i
+	ON i.id = ac.institutionid AND i.isdeleted = false
+	WHERE var_userid = ad.userid AND 'ACD' = ad.advertisementtype AND var_isselling = ad.isselling AND ad.isdeleted = false
+	LIMIT var_limit;
+END;
+$BODY$;
+
+/* ---- Get Tutor Advertisement by User ID Function ---- */
+CREATE OR REPLACE FUNCTION public.gettutoradvertisementsbyuserid(
+	var_userid uuid,
+	var_limit numeric,
+	var_isselling boolean)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode
+    FROM public.Advertisement as a
+	INNER JOIN public.Tutor as t 
+	ON a.entityid = t.id
+	INNER JOIN public.Module as m
+	ON m.id = t.moduleid AND m.isdeleted = false
+	WHERE var_userid = a.userid AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
+	LIMIT var_limit;
+END;
+$BODY$;
+
+/* ---- Get Note Advertisement by User ID Function ---- */
+CREATE OR REPLACE FUNCTION public.getnoteadvertisementsbyuserid(
+	var_userid uuid,
+	var_limit numeric,
+	var_isselling boolean)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode
+    FROM public.Advertisement as a
+	INNER JOIN public.Notes as n 
+	ON a.entityid = n.id
+	INNER JOIN public.Module as m
+	ON m.id = n.moduleid AND m.isdeleted = false
+	WHERE var_userid = a.userid AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
+	LIMIT var_limit;
+END;
+$BODY$;
 /* ---- Get all advertisements Function ---- */
 
 CREATE OR REPLACE FUNCTION public.getalladvertisements()
@@ -1678,7 +1760,7 @@ INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted,
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 /* ---- USERS ---- */
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234567','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('7bb9d62d-c3fa-4e63-9f07-061f6226cebb','Jack','123456','Gerard','Botes','jack@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
@@ -1689,64 +1771,64 @@ VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '56c27ab0-eed7-4aa5-8b0a-e4082c8
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '7dda5091-4a6e-42dd-b6e1-7ccc8be7e5cd', '600','Default Textbook Advertisement, With a whole lot of text to test the ammount of text that we want to see in a description and how bad that is going to affect the size of the card! in other news I am quite concerned about the corona virus but not really aa', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('4eafce73-791d-46c4-9c24-9c99f9352459', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('4eafce73-791d-46c4-9c24-9c99f9352459', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 3', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('0f3f0188-2130-4369-af37-fc50242a39db', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', '46bd986a-5f7d-4b4a-b972-08518315143b', '180','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('0f3f0188-2130-4369-af37-fc50242a39db', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', '46bd986a-5f7d-4b4a-b972-08518315143b', '180','Default Textbook Advertisement 4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('8964f09f-27ca-4132-9a8a-25bdb9d00737', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', '64a4c6c0-bf8e-4728-a650-579003bc6857', '900','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('8964f09f-27ca-4132-9a8a-25bdb9d00737', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', '64a4c6c0-bf8e-4728-a650-579003bc6857', '900','Default Textbook Advertisement 5', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('87b9d7da-77f3-4e36-ba50-02924f87d999', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('87b9d7da-77f3-4e36-ba50-02924f87d999', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 6', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('b81d3ef5-9bf9-4f60-bd28-5404c647bab4', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('b81d3ef5-9bf9-4f60-bd28-5404c647bab4', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 7', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('6ebdece0-4b26-4c12-809a-2e3a6f3e0caa', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('6ebdece0-4b26-4c12-809a-2e3a6f3e0caa', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 8', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('232de107-b11e-463f-aca0-5800c7ca4046', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('232de107-b11e-463f-aca0-5800c7ca4046', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 9', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('27d6cf3a-d6d1-49ba-9ed6-eecb780e73ae', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('27d6cf3a-d6d1-49ba-9ed6-eecb780e73ae', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 10', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('ed6aa9fa-5fe3-4dad-b2b8-eedcb965b318', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('ed6aa9fa-5fe3-4dad-b2b8-eedcb965b318', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 11', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('773888a5-3ad7-4264-8b8c-66c967862f47', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('773888a5-3ad7-4264-8b8c-66c967862f47', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 12', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('9e4aeb6d-1193-4cfb-b886-0d4058aaf781', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('9e4aeb6d-1193-4cfb-b886-0d4058aaf781', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 13', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('99cb6d90-7dd2-4aec-bcdd-703c9eb870ca', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('99cb6d90-7dd2-4aec-bcdd-703c9eb870ca', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '25eceef0-eef4-4ea5-bc06-abc1ffce0b6d', '760','Default Textbook Advertisement 14', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '450','Default Tutoring Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '450','Default Tutoring Advertisement 1', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('957f82e0-6b08-4632-bc12-300b5f817e6e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', '07783074-3f1d-4ae3-b27b-c075f34aacf9', '600','Default Tutoring Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('957f82e0-6b08-4632-bc12-300b5f817e6e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', '07783074-3f1d-4ae3-b27b-c075f34aacf9', '600','Default Tutoring Advertisement 2', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('b9367c75-83b8-4a87-acb6-04468e72b61d', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', 'c184c2b9-4039-4b6f-964c-d95b0b9a358c', '760','Default Tutoring Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('b9367c75-83b8-4a87-acb6-04468e72b61d', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', 'c184c2b9-4039-4b6f-964c-d95b0b9a358c', '760','Default Tutoring Advertisement 3', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('fdcef41c-740d-43c4-8535-876a18c6ed8d', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TUT', '7e0e437c-aa29-488f-9202-36d281e70c40', '180','Default Tutoring Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('fdcef41c-740d-43c4-8535-876a18c6ed8d', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TUT', '7e0e437c-aa29-488f-9202-36d281e70c40', '180','Default Tutoring Advertisement 4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('c42460df-7aa0-484e-902c-29a21f79527f', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TUT', 'b8a5ee1b-0696-4d22-8e1d-d325a673980c', '900','Default Tutoring Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('c42460df-7aa0-484e-902c-29a21f79527f', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TUT', 'b8a5ee1b-0696-4d22-8e1d-d325a673980c', '900','Default Tutoring Advertisement 5', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('81dc2379-aeb9-4279-865b-bdb46edc5db5', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '450','Default Accomodation Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('81dc2379-aeb9-4279-865b-bdb46edc5db5', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '450','Default Accomodation Advertisement 1', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('b1177d3e-43bd-4614-b512-2c6f3a2436a1', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', 'd4b1ef8d-cac8-4793-96b9-51f1024affc7', '600','Default Accomodation Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('b1177d3e-43bd-4614-b512-2c6f3a2436a1', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', 'd4b1ef8d-cac8-4793-96b9-51f1024affc7', '600','Default Accomodation Advertisement 2' , CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('53d9ab8c-d572-4315-b0e2-6ed1785d444e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '6032734b-fe59-4be7-b953-c864ad8ac0b7', '760','Default Accomodation Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('53d9ab8c-d572-4315-b0e2-6ed1785d444e', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '6032734b-fe59-4be7-b953-c864ad8ac0b7', '760','Default Accomodation Advertisement 3', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('a9c2abd0-be84-49c7-99a0-063dcb85f7eb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'ACD', '845f4a14-617b-4010-9dc4-e9cd84f47913', '180','Default Accomodation Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('a9c2abd0-be84-49c7-99a0-063dcb85f7eb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'ACD', '845f4a14-617b-4010-9dc4-e9cd84f47913', '180','Default Accomodation Advertisement 4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('7b803d28-19fb-4d20-a8d9-9a1a9f2207ec', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'ACD', '92842317-c6c6-4bac-9b30-aa85fba4af0a', '900','Default Accomodation Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('7b803d28-19fb-4d20-a8d9-9a1a9f2207ec', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'ACD', '92842317-c6c6-4bac-9b30-aa85fba4af0a', '900','Default Accomodation Advertisement 5', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','Default Notes Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','Default Notes Advertisement 1', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('3c3741b9-f71a-410a-b170-23c07abeb327', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', '0d09d6dd-dcb3-4202-80d6-098c2901e14e', '600','Default Notes Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('3c3741b9-f71a-410a-b170-23c07abeb327', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', '0d09d6dd-dcb3-4202-80d6-098c2901e14e', '600','Default Notes Advertisement 2', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('9ed48cfb-7e49-4d6c-9e01-68ff5fed5d51', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'f654d998-5040-4288-9856-81dd3e713ff2', '760','Default Notes Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('9ed48cfb-7e49-4d6c-9e01-68ff5fed5d51', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'f654d998-5040-4288-9856-81dd3e713ff2', '760','Default Notes Advertisement 3', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('c2de2f67-ec44-4998-91ac-0a7f4f117350', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'NTS', 'dc91d48c-dae9-4cc7-a147-a13c6c133143', '180','Default Notes Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('c2de2f67-ec44-4998-91ac-0a7f4f117350', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'NTS', 'dc91d48c-dae9-4cc7-a147-a13c6c133143', '180','Default Notes Advertisement 4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('00dfc25a-cb4c-4be5-9bdc-347db41dd68e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'NTS', '295e33f3-45f1-4440-9737-ba44cbdb50ac', '900','Default Notes Advertisement', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('00dfc25a-cb4c-4be5-9bdc-347db41dd68e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'NTS', '295e33f3-45f1-4440-9737-ba44cbdb50ac', '900','Default Notes Advertisement 5' , CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 --INSERT DEFAULT IMAGES
 INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)

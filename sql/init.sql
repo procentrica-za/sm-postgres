@@ -1444,7 +1444,7 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, username character varying) 
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp ) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1453,18 +1453,36 @@ CREATE OR REPLACE FUNCTION public.getactivechats(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT c.id, u.username
+	SELECT c.id, COALESCE(s.username, b.username), 
+	(
+		SELECT m.message 
+		FROM public.message m
+		WHERE m.chatid = c.id AND m.isdeleted = false
+		ORDER BY m.messagedate DESC
+		limit 1
+	), 
+	(
+		SELECT m.messagedate
+		FROM public.message m
+		WHERE m.chatid = c.id AND m.isdeleted = false
+		ORDER BY m.messagedate DESC
+		limit 1
+	)
     FROM public.Chat as c
-	INNER JOIN public.User as u 
-	ON c.sellerid = u.id 
-	WHERE c.isactive = true AND u.isdeleted = false AND u.id != var_userid;
+	LEFT JOIN public.User as s 
+	ON c.sellerid = s.id AND s.isdeleted = false AND s.id != var_userid
+	LEFT JOIN public.User as b
+	ON c.buyerid = b.id AND b.isdeleted = false AND b.id != var_userid
+	WHERE c.isactive = true  AND (c.sellerid = var_userid OR c.buyerid = var_userid);
+
+
 END;
 $BODY$;
 
 /* -----View Messages function -------- */
 CREATE OR REPLACE FUNCTION public.getchat(
 	var_chatid uuid)
-    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp ) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1493,7 +1511,7 @@ CREATE OR REPLACE FUNCTION public.sendmessage(
 	var_chatid uuid,
 	var_authorid uuid,
 	var_message character varying)
-    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp) 
     LANGUAGE 'plpgsql'
 
      COST 100

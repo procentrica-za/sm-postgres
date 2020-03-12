@@ -246,6 +246,7 @@ CREATE TABLE public.Chat (
     CONSTRAINT buyeridfkey FOREIGN KEY (BuyerID)
         REFERENCES public.User (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
+    AdvertisementID uuid NOT NULL,
     IsActive Boolean DEFAULT(false),
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
@@ -1397,6 +1398,7 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.addchat(
 	var_sellerid uuid,
 	var_buyerid uuid,
+    var_advertisementid uuid,
 	OUT ret_success bool,
 	OUT ret_chatid uuid)
     RETURNS record
@@ -1409,8 +1411,8 @@ AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-	INSERT INTO public.Chat(ID, SellerID, BuyerID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_sellerid, var_buyerid,'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	INSERT INTO public.Chat(ID, SellerID, BuyerID, AdvertisementID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_sellerid, var_buyerid, var_advertisementid, 'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     ret_success := true;
     ret_chatid := id;
 END;
@@ -1799,14 +1801,14 @@ VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e
 
 
 /* ---- INSERT CHAT DATA ---- */
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'fced8299-1095-4ca1-8a42-feb8f83eed2f', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'a5c663a1-ffff-43fe-8475-b2d2075a3599', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '95f1a163-1baf-41d1-a298-3626f1fc6bb7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'dcf1900b-f8f3-439b-8625-b8ad7a6fde15', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
 /* ---- INSERT MESSAGE DATA ---- */

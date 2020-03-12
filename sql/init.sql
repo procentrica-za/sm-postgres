@@ -1545,6 +1545,38 @@ ORDER BY m.messagedate;
 END;
 $BODY$;
 
+/* ---------------------------------------------------------------------
+------------------------------------------------------------------------
+----------------------------Rating functions----------------------------
+------------------------------------------------------------------------
+----------------------------------------------------------------------*/
+
+/*-------           Intiial rating function    ------*/
+CREATE OR REPLACE FUNCTION public.ratebuyer(
+    var_advertisementid uuid,
+    var_buyerid uuid,
+    var_sellerid uuid,
+    var_buyerrating float,
+    var_buyercomments character varying,
+	OUT ret_rated bool,
+	OUT ret_advertisementid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+BEGIN
+	INSERT INTO public.Rating(ID, AdvertisementID, SellerID, BuyerID, BuyerRating, BuyerComments, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_advertisementid, var_buyerid, var_sellerid, var_buyerrating, var_buyercomments,  CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    ret_rated := true;
+    ret_advertisementid := id;
+END;
+$BODY$;
+
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');

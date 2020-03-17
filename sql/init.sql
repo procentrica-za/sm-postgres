@@ -1572,10 +1572,15 @@ AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
+IF EXISTS (SELECT 1 FROM public.rating r WHERE r.advertisementid = var_advertisementid) THEN
+		ret_rated := false;
+        ret_advertisementid := '00000000-0000-0000-0000-000000000000';
+    ELSE    
 	INSERT INTO public.Rating(ID, AdvertisementID, SellerID, BuyerID, BuyerRating, BuyerComments, CreatedDateTime, IsDeleted, ModifiedDateTime)
     VALUES (id, var_advertisementid, var_buyerid, var_sellerid, var_buyerrating, var_buyercomments,  CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     ret_rated := true;
     ret_advertisementid := id;
+    END IF;
 END;
 $BODY$;
 

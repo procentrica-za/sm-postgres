@@ -1587,8 +1587,8 @@ $BODY$;
 
 /*-------           Seller rating function    ------*/
 CREATE OR REPLACE FUNCTION public.rateseller(
-	var_advertisementid uuid,
-	var_sellerrating float,
+	var_ratingid uuid,
+	var_sellerrating double precision,
 	var_sellercomments character varying,
 	OUT ret_rated boolean)
     RETURNS boolean
@@ -1597,15 +1597,13 @@ CREATE OR REPLACE FUNCTION public.rateseller(
     COST 100
     VOLATILE 
 AS $BODY$
-DECLARE
-    id uuid := uuid_generate_v4();
 BEGIN
-	IF EXISTS (SELECT 1 FROM public.rating r WHERE r.isdeleted = true AND r.advertisementid = var_advertisementid) THEN
+	IF EXISTS (SELECT 1 FROM public.rating r WHERE r.isdeleted = true AND r.id = var_ratingid) THEN
 	ret_rated := false;
     ELSE
         UPDATE public.Rating
    	    SET sellerrating = var_sellerrating, sellercomments =  var_sellercomments , modifieddatetime = CURRENT_TIMESTAMP 
-        WHERE var_advertisementid = advertisementid AND isdeleted = false;
+        WHERE id = var_ratingid AND isdeleted = false;
         ret_rated := true;
     END IF;
 END;

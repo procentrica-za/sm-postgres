@@ -62,8 +62,8 @@ CREATE TABLE public.Rating (
     CONSTRAINT ratingadvertisementfkey FOREIGN KEY (AdvertisementID)
         REFERENCES public.Advertisement (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
-    BuyerRating int,
-    SellerRating int,
+    BuyerRating DEC(15,2),
+    SellerRating DEC(15,2),
     BuyerComments Varchar(255),
     SellerComments Varchar(255),
     CreatedDateTime timestamp NOT NULL,
@@ -1583,7 +1583,7 @@ $BODY$;
 /*-------           Seller rating function    ------*/
 CREATE OR REPLACE FUNCTION public.rateseller(
 	var_advertisementid uuid,
-	var_sellerrating double precision,
+	var_sellerrating float,
 	var_sellercomments character varying,
 	OUT ret_rated boolean)
     RETURNS boolean

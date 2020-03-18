@@ -62,8 +62,8 @@ CREATE TABLE public.Rating (
     CONSTRAINT ratingadvertisementfkey FOREIGN KEY (AdvertisementID)
         REFERENCES public.Advertisement (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
-    BuyerRating int,
-    SellerRating int,
+    BuyerRating DEC(15,2),
+    SellerRating DEC(15,2),
     BuyerComments Varchar(255),
     SellerComments Varchar(255),
     CreatedDateTime timestamp NOT NULL,
@@ -246,6 +246,8 @@ CREATE TABLE public.Chat (
     CONSTRAINT buyeridfkey FOREIGN KEY (BuyerID)
         REFERENCES public.User (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
+    AdvertisementType Varchar(3),
+    AdvertisementID uuid NOT NULL,
     IsActive Boolean DEFAULT(false),
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
@@ -1541,6 +1543,8 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.addchat(
 	var_sellerid uuid,
 	var_buyerid uuid,
+    var_advertisementtype character varying,
+    var_advertisementid uuid,
 	OUT ret_success bool,
 	OUT ret_chatid uuid)
     RETURNS record
@@ -1553,8 +1557,8 @@ AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-	INSERT INTO public.Chat(ID, SellerID, BuyerID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_sellerid, var_buyerid,'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+	INSERT INTO public.Chat(ID, SellerID, BuyerID, AdvertisementType, AdvertisementID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_sellerid, var_buyerid, var_advertisementtype, var_advertisementid, 'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     ret_success := true;
     ret_chatid := id;
 END;
@@ -1588,7 +1592,7 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp ) 
+    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying, message character varying, messagedate timestamp ) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1597,7 +1601,7 @@ CREATE OR REPLACE FUNCTION public.getactivechats(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT c.id, COALESCE(s.username, b.username), 
+	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username), 
 	(
 		SELECT m.message 
 		FROM public.message m
@@ -1684,6 +1688,138 @@ ORDER BY m.messagedate;
 
 
 
+END;
+$BODY$;
+
+/* ---------------------------------------------------------------------
+------------------------------------------------------------------------
+----------------------------Rating functions----------------------------
+------------------------------------------------------------------------
+----------------------------------------------------------------------*/
+
+/*-------           Initial rating function    ------*/
+CREATE OR REPLACE FUNCTION public.ratebuyer(
+    var_advertisementid uuid,
+    var_buyerid uuid,
+    var_sellerid uuid,
+    var_buyerrating float,
+    var_buyercomments character varying,
+	OUT ret_rated bool,
+	OUT ret_ratingid uuid)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+BEGIN
+IF EXISTS (SELECT 1 FROM public.rating r WHERE r.advertisementid = var_advertisementid) THEN
+		ret_rated := false;
+        ret_ratingid := '00000000-0000-0000-0000-000000000000';
+    ELSE    
+	INSERT INTO public.Rating(ID, AdvertisementID, SellerID, BuyerID, BuyerRating, BuyerComments, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_advertisementid, var_buyerid, var_sellerid, var_buyerrating, var_buyercomments,  CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    ret_rated := true;
+    ret_ratingid := id;
+    END IF;
+END;
+$BODY$;
+
+
+/*-------           Seller rating function    ------*/
+CREATE OR REPLACE FUNCTION public.rateseller(
+	var_ratingid uuid,
+	var_sellerrating double precision,
+	var_sellercomments character varying,
+	OUT ret_rated boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+	IF EXISTS (SELECT 1 FROM public.rating r WHERE r.isdeleted = true AND r.id = var_ratingid) THEN
+	ret_rated := false;
+    ELSE
+        UPDATE public.Rating
+   	    SET sellerrating = var_sellerrating, sellercomments =  var_sellercomments , modifieddatetime = CURRENT_TIMESTAMP 
+        WHERE id = var_ratingid AND isdeleted = false;
+        ret_rated := true;
+    END IF;
+END;
+$BODY$;
+
+
+/* ---------- View outstanding ratings function  --------- */
+CREATE OR REPLACE FUNCTION public.getoutstandingratings(
+	var_userid uuid)
+    RETURNS TABLE(id uuid, username character varying, price numeric, title character varying, description character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+DECLARE
+var_advertisementtype  character varying;
+BEGIN
+SELECT a.advertisementtype 
+INTO var_advertisementtype
+FROM public.Advertisement a, public.Rating r
+WHERE a.id = r.advertisementid;
+IF var_advertisementtype = 'TXB' THEN
+	RETURN QUERY
+	SELECT r.id, u.username, a.price, t.name, a.description
+    FROM public.Rating as r
+	LEFT JOIN public.User as u 
+	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON r.advertisementid = a.id AND a.isdeleted = false
+    LEFT JOIN public.Textbook as t
+    ON a.entityid = t.id
+    WHERE r.isdeleted = false;
+ELSEIF var_advertisementtype = 'NTS' THEN
+RETURN QUERY
+	SELECT r.id, u.username, a.price, m.modulecode, a.description
+    FROM public.Rating as r
+	LEFT JOIN public.User as u
+	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON r.advertisementid = a.id AND a.isdeleted = false
+   LEFT JOIN public.Notes as n
+	ON a.entityid = n.id
+	LEFT JOIN public.Module as m
+	ON m.id = n.moduleid AND m.isdeleted = false
+    WHERE r.isdeleted = false;
+
+ELSEIF  var_advertisementtype = 'TUT' THEN
+RETURN QUERY
+	SELECT r.id, u.username, a.price, tu.subject, a.description
+    FROM public.Rating as r
+	LEFT JOIN public.User as u
+	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON r.advertisementid = a.id AND a.isdeleted = false
+    LEFT JOIN public.Tutor as tu
+	ON a.entityid = tu.id
+    WHERE r.isdeleted = false;
+
+ELSEIF  var_advertisementtype = 'ACD' THEN
+RETURN QUERY
+	SELECT r.id, u.username, a.price, ac.location, a.description
+    FROM public.Rating as r
+	LEFT JOIN public.User as u
+	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON r.advertisementid = a.id AND a.isdeleted = false
+    LEFT JOIN public.Accomodation as ac
+	ON a.entityid = ac.id
+    WHERE r.isdeleted = false;
+END IF;
 END;
 $BODY$;
 
@@ -1945,14 +2081,14 @@ VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e
 
 
 /* ---- INSERT CHAT DATA ---- */
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'TXB', 'fced8299-1095-4ca1-8a42-feb8f83eed2f', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'ACD','a5c663a1-ffff-43fe-8475-b2d2075a3599', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'NTS', '95f1a163-1baf-41d1-a298-3626f1fc6bb7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'TXB', 'dcf1900b-f8f3-439b-8625-b8ad7a6fde15', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
 /* ---- INSERT MESSAGE DATA ---- */
@@ -1962,3 +2098,13 @@ INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedD
 VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this still works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
 VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'Yes this is great', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+/* ---- INSERT RATING DATA ---- */
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
+VALUES ('23c571a5-4004-4f98-ac65-d426e022f59a', '4eafce73-791d-46c4-9c24-9c99f9352459', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 5,  'Good buyer to Use', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
+VALUES ('574ce532-4b5c-497c-a767-87e7ef59bb2e', '06abf31a-3165-48ad-87b3-75ff2a6c0225', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 5,  'Good buyer to Use', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
+VALUES ('76ac4759-969d-42ea-9075-dd6ca051cb08', '81dc2379-aeb9-4279-865b-bdb46edc5db5', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 5,  'Good buyer to Use', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
+VALUES ('6cbe38ab-0b2e-4e64-954b-46223e0d64cf', 'c2de2f67-ec44-4998-91ac-0a7f4f117350', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 5,  'Good buyer to Use', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );

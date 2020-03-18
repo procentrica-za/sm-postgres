@@ -1695,7 +1695,7 @@ INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted,
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 /* ---- USERS ---- */
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234567','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('7bb9d62d-c3fa-4e63-9f07-061f6226cebb','Jack','123456','Gerard','Botes','jack@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)

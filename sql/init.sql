@@ -546,6 +546,7 @@ $BODY$;
 /* ---- Add Tutor Function ---- */
 /* TODO: Error handling for duplicates */
 CREATE OR REPLACE FUNCTION public.addtutor(
+    var_id uuid,
 	var_modulecode character varying,
 	var_subject character varying,
 	var_yearcompleted character varying,
@@ -562,7 +563,6 @@ CREATE OR REPLACE FUNCTION public.addtutor(
     
 AS $BODY$
 DECLARE
-	id uuid := uuid_generate_v4();
     var_moduleid uuid;
 BEGIN
 IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
@@ -571,9 +571,9 @@ IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND
     FROM public.Module m  
     WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_subject, var_yearcompleted, var_moduleid, var_venue, var_notesincluded, var_terms, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    VALUES (var_id, var_subject, var_yearcompleted, var_moduleid, var_venue, var_notesincluded, var_terms, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
 	    ret_success = true;
-	    ret_tutorid = id;
+	    ret_tutorid = var_id;
     ELSE
 		ret_success = false;
 		ret_tutorid = '00000000-0000-0000-0000-000000000000';
@@ -584,6 +584,7 @@ $BODY$;
 /* ---- Add Accomodation Function ---- */
 /* TODO: Error handling for duplicates */
 CREATE OR REPLACE FUNCTION public.addaccomodation(
+    var_id uuid,
 	var_accomodationTypeCode character varying,
 	var_institutionname character varying,
 	var_location character varying,
@@ -598,7 +599,6 @@ CREATE OR REPLACE FUNCTION public.addaccomodation(
     
 AS $BODY$
 DECLARE
-	id uuid := uuid_generate_v4();
     var_institutionid uuid;
 BEGIN
 IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institutionname AND i.isdeleted = false) THEN
@@ -607,9 +607,9 @@ IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institutionname
     FROM public.institution i  
     WHERE i.name = var_institutionname AND i.isdeleted = false;
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_accomodationTypeCode, var_institutionid, var_location, var_distanceToCampus, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    VALUES (var_id, var_accomodationTypeCode, var_institutionid, var_location, var_distanceToCampus, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
 	ret_success = true;
-	ret_accomodationid = id;
+	ret_accomodationid = var_id;
     ELSE
 		ret_success = false;
 		ret_accomodationid = '00000000-0000-0000-0000-000000000000';
@@ -620,18 +620,17 @@ $BODY$;
 /* ---- Add Notes Function ---- */
 /* TODO: Error handling for duplicates */
 CREATE OR REPLACE FUNCTION public.addnote(
+	var_id uuid,
 	var_modulecode character varying,
-	OUT ret_success bool,
+	OUT ret_success boolean,
 	OUT ret_noteid uuid)
     RETURNS record
     LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
-	id uuid := uuid_generate_v4();
     var_moduleid uuid;
 BEGIN
 IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND m.isdeleted = false) THEN
@@ -640,9 +639,9 @@ IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND
     FROM public.Module m  
     WHERE m.modulecode = var_modulecode AND m.isdeleted = false;
 INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_moduleid, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    VALUES (var_id, var_moduleid, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
 	ret_success = true;
-	ret_noteid = id;
+	ret_noteid = var_id;
     ELSE
 		ret_success = false;
 		ret_noteid = '00000000-0000-0000-0000-000000000000';

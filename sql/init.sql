@@ -1416,6 +1416,12 @@ END;
 $BODY$;
 
 
+/* ---------------------------------------------------------------------
+------------------------------------------------------------------------
+-------------------------Image Functions----------------------------
+------------------------------------------------------------------------
+----------------------------------------------------------------------*/
+
 CREATE OR REPLACE FUNCTION public.getcardmainimage(
 	var_entityid uuid,
 	OUT ret_filepath character varying,
@@ -1464,6 +1470,63 @@ BEGIN
     INNER JOIN public.Image i ON i.ID = ai.ImageID AND i.isdeleted = false
     WHERE ai.AdvertisingID = ANY (params) AND i.IsMainImage = true;
 	
+END;
+$BODY$;
+
+/* ############################################################################## */
+CREATE OR REPLACE FUNCTION public.getadvertisementimages(
+	var_entityid uuid)
+    RETURNS TABLE(entityid uuid, pathstring varchar(256), filename varchar(256))
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+
+    IF EXISTS(SELECT 1
+        FROM public.AdvertisementImage ai
+        INNER JOIN public.Image i ON i.ID = ai.ImageID AND i.isdeleted = false
+        WHERE ai.AdvertisingID = var_entityid)
+    THEN 
+        RETURN QUERY
+        SELECT ai.AdvertisingID , i.pathstring, i.filename
+        FROM public.AdvertisementImage ai
+        INNER JOIN public.Image i ON i.ID = ai.ImageID AND i.isdeleted = false
+        WHERE ai.AdvertisingID = var_entityid;
+	ELSE
+        RETURN QUERY
+        SELECT var_entityid , 'default'::character varying, 'default'::character varying;
+    END IF;
+
+END;
+$BODY$;
+
+/* ############################ INSERT IMAGE DATA INTO DB ##################################### */
+CREATE OR REPLACE FUNCTION public.addimage(
+	var_pathstring character varying,
+	var_ismainiamge boolean,
+	var_filename character varying,
+	var_entityid uuid,
+	OUT res_imageinserted boolean,
+	OUT ret_message character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+    imageid uuid := uuid_generate_v4();
+BEGIN
+	INSERT INTO public.image(id, pathstring, filename, ismainimage, createddatetime, isdeleted, modifieddatetime)
+	VALUES(imageid, var_pathstring, var_filename, var_ismainimage, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP );
+
+	INSERT INTO public.advertisementimage(advertisingid, imageid, createddatetime, isdeleted, modifieddatetime)
+	VALUES (var_entityid, imageid, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+	
+    res_imageinserted := true;
+	ret_message := 'Advert Successfully Created!';
 END;
 $BODY$;
 
@@ -1623,6 +1686,8 @@ ORDER BY m.messagedate;
 
 END;
 $BODY$;
+
+
 
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');

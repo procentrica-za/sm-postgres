@@ -1767,59 +1767,78 @@ AS $BODY$
 DECLARE
 var_advertisementtype  character varying;
 BEGIN
-SELECT a.advertisementtype 
-INTO var_advertisementtype
-FROM public.Advertisement a, public.Rating r
-WHERE a.id = r.advertisementid;
-IF var_advertisementtype = 'TXB' THEN
+	SELECT a.advertisementtype
+	INTO var_advertisementtype
+	FROM public.Advertisement a, public.Rating r
+	WHERE a.id = r.advertisementid;
 	RETURN QUERY
-	SELECT r.id, u.username, a.price, t.name, a.description
+	SELECT r.id, COALESCE(s.username, b.username), a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description
+    FROM public.Rating as r
+	--This is to see if the other user is the seller
+	LEFT JOIN public.User as s
+	ON r.sellerid = s.id AND s.isdeleted = false AND s.id != var_userid
+	--This is to see if the other user is the buyer
+	LEFT JOIN public.User as b
+	ON r.buyerid = b.id AND b.isdeleted = false AND b.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON r.advertisementid = a.id AND a.isdeleted = false
+	--JOIN ONTO THE CORRECT ADD TYPE
+    LEFT JOIN public.Textbook as txb
+    ON a.entityid = txb.id AND txb.isdeleted = false
+	LEFT JOIN public.Tutor as tut
+	ON tut.id = a.entityid AND tut.isdeleted = false
+	LEFT JOIN public.Notes n
+	ON n.id = a.entityid AND n.isdeleted = false
+	LEFT JOIN public.module nmod
+	ON nmod.id = n.moduleid AND nmod.isdeleted = false
+	LEFT JOIN public.accomodation acc
+	ON acc.id = a.entityid AND acc.isdeleted = false
+	LEFT JOIN public.accomodationtype act
+	ON act.code = acc.accomodationtypecode
+    WHERE r.isdeleted = false AND r.sellerrating is null;
+END;
+$BODY$;
+
+/* ---------- Ratings as a seller dasboard function  --------- */
+
+CREATE OR REPLACE FUNCTION public.sellerratings(
+	var_userid uuid)
+    RETURNS TABLE(id uuid, username character varying, rating numeric, comment character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT r.id, u.username, r.sellerrating, r.sellercomments 
     FROM public.Rating as r
 	LEFT JOIN public.User as u 
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-    LEFT JOIN public.Textbook as t
-    ON a.entityid = t.id
-    WHERE r.isdeleted = false;
-ELSEIF var_advertisementtype = 'NTS' THEN
-RETURN QUERY
-	SELECT r.id, u.username, a.price, m.modulecode, a.description
-    FROM public.Rating as r
-	LEFT JOIN public.User as u
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-   LEFT JOIN public.Notes as n
-	ON a.entityid = n.id
-	LEFT JOIN public.Module as m
-	ON m.id = n.moduleid AND m.isdeleted = false
-    WHERE r.isdeleted = false;
+	ON r.buyerid = u.id AND u.id != var_userid
+	WHERE r.isdeleted = false AND r.sellerrating is not null AND r.sellerid = var_userid;
 
-ELSEIF  var_advertisementtype = 'TUT' THEN
-RETURN QUERY
-	SELECT r.id, u.username, a.price, tu.subject, a.description
-    FROM public.Rating as r
-	LEFT JOIN public.User as u
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-    LEFT JOIN public.Tutor as tu
-	ON a.entityid = tu.id
-    WHERE r.isdeleted = false;
+END;
+$BODY$;
 
-ELSEIF  var_advertisementtype = 'ACD' THEN
-RETURN QUERY
-	SELECT r.id, u.username, a.price, ac.location, a.description
+/* ---------- Ratings as a buyer dasboard function  --------- */
+CREATE OR REPLACE FUNCTION public.buyerratings(
+	var_userid uuid)
+    RETURNS TABLE(id uuid, username character varying, rating numeric, comment character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT r.id, u.username, r.buyerrating, r.buyercomments 
     FROM public.Rating as r
-	LEFT JOIN public.User as u
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-    LEFT JOIN public.Accomodation as ac
-	ON a.entityid = ac.id
-    WHERE r.isdeleted = false;
-END IF;
+	LEFT JOIN public.User as u 
+	ON r.sellerid = u.id AND u.id != var_userid
+	WHERE r.isdeleted = false AND r.buyerrating is not null AND r.buyerid = var_userid;
+
 END;
 $BODY$;
 

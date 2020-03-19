@@ -248,6 +248,7 @@ CREATE TABLE public.Chat (
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     AdvertisementType Varchar(3),
     AdvertisementID uuid NOT NULL,
+    IsRated Boolean DEFAULT(false),
     IsActive Boolean DEFAULT(false),
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
@@ -1844,6 +1845,27 @@ BEGIN
 	LEFT JOIN public.User as u 
 	ON r.sellerid = u.id AND u.id != var_userid
 	WHERE r.isdeleted = false AND r.buyerrating is not null AND r.buyerid = var_userid;
+
+END;
+$BODY$;
+
+/* ---------- View interested buyers function  --------- */
+CREATE OR REPLACE FUNCTION public.getinterestedbuyers(
+	var_userid uuid,
+	var_advertisementid uuid)
+    RETURNS TABLE(username character varying, advertisementid uuid, sellerid uuid, buyerid uuid) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.username, c.advertisementid, c.sellerid, c.buyerid
+    FROM public.Chat as c
+	LEFT JOIN public.User as u 
+	ON c.buyerid = u.id 
+	WHERE c.israted = false AND c.advertisementid = var_advertisementid AND c.sellerid = var_userid;
 
 END;
 $BODY$;

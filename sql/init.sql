@@ -1543,27 +1543,33 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.addchat(
 	var_sellerid uuid,
 	var_buyerid uuid,
-    var_advertisementtype character varying,
-    var_advertisementid uuid,
-	OUT ret_success bool,
+	var_advertisementtype character varying,
+	var_advertisementid uuid,
+	OUT ret_success boolean,
 	OUT ret_chatid uuid)
     RETURNS record
     LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
+IF EXISTS (SELECT 1 FROM public.chat c WHERE c.sellerid = var_sellerid AND c.buyerid = var_buyerid AND c.advertisementid = var_advertisementid) THEN
+    SELECT c.id
+	INTO ret_chatid
+    FROM public.Chat c
+    WHERE c.sellerid = var_sellerid AND c.buyerid = var_buyerid AND c.advertisementid = var_advertisementid;
+	ret_success := false;
+	ELSE
 	INSERT INTO public.Chat(ID, SellerID, BuyerID, AdvertisementType, AdvertisementID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
     VALUES (id, var_sellerid, var_buyerid, var_advertisementtype, var_advertisementid, 'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     ret_success := true;
     ret_chatid := id;
+	END IF;
 END;
 $BODY$;
-
 
 /* -------Delete chat functon ----------- */
 CREATE OR REPLACE FUNCTION public.deletechat(

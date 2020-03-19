@@ -1507,7 +1507,7 @@ $BODY$;
 /* ############################ INSERT IMAGE DATA INTO DB ##################################### */
 CREATE OR REPLACE FUNCTION public.addimage(
 	var_pathstring character varying,
-	var_ismainiamge boolean,
+	var_ismainimage boolean,
 	var_filename character varying,
 	var_entityid uuid,
 	OUT res_imageinserted boolean,

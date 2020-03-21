@@ -1802,7 +1802,7 @@ BEGIN
 	ON acc.id = a.entityid AND acc.isdeleted = false
 	LEFT JOIN public.accomodationtype act
 	ON act.code = acc.accomodationtypecode
-    WHERE r.isdeleted = false AND r.sellerrating is null;
+    WHERE r.isdeleted = false AND r.sellerrating is null AND r.buyerid = var_userid;
 END;
 $BODY$;
 

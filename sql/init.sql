@@ -248,6 +248,9 @@ CREATE TABLE public.Chat (
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     AdvertisementType Varchar(3),
     AdvertisementID uuid NOT NULL,
+    CONSTRAINT chatadvertisementfkey FOREIGN KEY (AdvertisementID)
+        REFERENCES public.Advertisement (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
     IsRated Boolean DEFAULT(false),
     IsActive Boolean DEFAULT(false),
     CreatedDateTime timestamp NOT NULL,
@@ -1599,14 +1602,20 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying, message character varying, messagedate timestamp ) 
+    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying, message character varying, messagedate timestamp without time zone,  price numeric, title character varying, description character varying ) 
     LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE 
     ROWS 1000
 AS $BODY$
+DECLARE
+var_advertisementtype  character varying;
 BEGIN
+	SELECT a.advertisementtype
+	INTO var_advertisementtype
+	FROM public.Advertisement a, public.Chat c
+	WHERE a.id = c.advertisementid;
 	RETURN QUERY
 	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username), 
 	(
@@ -1622,14 +1631,28 @@ BEGIN
 		WHERE m.chatid = c.id AND m.isdeleted = false
 		ORDER BY m.messagedate DESC
 		limit 1
-	)
+	),  a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description
     FROM public.Chat as c
 	LEFT JOIN public.User as s 
 	ON c.sellerid = s.id AND s.isdeleted = false AND s.id != var_userid
 	LEFT JOIN public.User as b
 	ON c.buyerid = b.id AND b.isdeleted = false AND b.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON c.advertisementid = a.id AND a.isdeleted = false
+	--JOIN ONTO THE CORRECT ADD TYPE
+    LEFT JOIN public.Textbook as txb
+    ON a.entityid = txb.id AND txb.isdeleted = false
+	LEFT JOIN public.Tutor as tut
+	ON tut.id = a.entityid AND tut.isdeleted = false
+	LEFT JOIN public.Notes n
+	ON n.id = a.entityid AND n.isdeleted = false
+	LEFT JOIN public.module nmod
+	ON nmod.id = n.moduleid AND nmod.isdeleted = false
+	LEFT JOIN public.accomodation acc
+	ON acc.id = a.entityid AND acc.isdeleted = false
+	LEFT JOIN public.accomodationtype act
+	ON act.code = acc.accomodationtypecode
 	WHERE c.isactive = true  AND (c.sellerid = var_userid OR c.buyerid = var_userid);
-
 
 END;
 $BODY$;
@@ -2129,22 +2152,22 @@ VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e
 
 /* ---- INSERT CHAT DATA ---- */
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'TXB', 'fced8299-1095-4ca1-8a42-feb8f83eed2f', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'TXB', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'ACD','a5c663a1-ffff-43fe-8475-b2d2075a3599', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'ACD','81dc2379-aeb9-4279-865b-bdb46edc5db5', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'NTS', '95f1a163-1baf-41d1-a298-3626f1fc6bb7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'NTS', '76151522-5437-4fe7-86b9-3dfa11d43cb6', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'TXB', 'dcf1900b-f8f3-439b-8625-b8ad7a6fde15', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'TUT', '06abf31a-3165-48ad-87b3-75ff2a6c0225', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
 /* ---- INSERT MESSAGE DATA ---- */
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hi i am interested in your ad', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this still works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Very interested', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'Yes this is great', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 'Cool, let us talk price', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 /* ---- INSERT RATING DATA ---- */
 INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)

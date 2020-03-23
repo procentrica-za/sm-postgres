@@ -1602,7 +1602,7 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying, message character varying, messagedate timestamp without time zone,  price numeric, title character varying, description character varying ) 
+    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying,  price numeric, title character varying, description character varying , message character varying, messagedate timestamp without time zone) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1617,7 +1617,7 @@ BEGIN
 	FROM public.Advertisement a, public.Chat c
 	WHERE a.id = c.advertisementid;
 	RETURN QUERY
-	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username), 
+	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username),   a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description,
 	(
 		SELECT m.message 
 		FROM public.message m
@@ -1631,7 +1631,7 @@ BEGIN
 		WHERE m.chatid = c.id AND m.isdeleted = false
 		ORDER BY m.messagedate DESC
 		limit 1
-	),  a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description
+	)
     FROM public.Chat as c
 	LEFT JOIN public.User as s 
 	ON c.sellerid = s.id AND s.isdeleted = false AND s.id != var_userid
@@ -2160,8 +2160,7 @@ VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '56c27ab0-eed7-4aa5-8b0a-e4082c8
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
 VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'TUT', '06abf31a-3165-48ad-87b3-75ff2a6c0225', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-
-/* ---- INSERT MESSAGE DATA ---- */
+/*---- INSERT MESSAGE DATA ---- */
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
 VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hi i am interested in your ad', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)

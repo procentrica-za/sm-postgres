@@ -248,6 +248,10 @@ CREATE TABLE public.Chat (
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     AdvertisementType Varchar(3),
     AdvertisementID uuid NOT NULL,
+    CONSTRAINT chatadvertisementfkey FOREIGN KEY (AdvertisementID)
+        REFERENCES public.Advertisement (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    IsRated Boolean DEFAULT(false),
     IsActive Boolean DEFAULT(false),
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
@@ -1543,27 +1547,33 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.addchat(
 	var_sellerid uuid,
 	var_buyerid uuid,
-    var_advertisementtype character varying,
-    var_advertisementid uuid,
-	OUT ret_success bool,
+	var_advertisementtype character varying,
+	var_advertisementid uuid,
+	OUT ret_success boolean,
 	OUT ret_chatid uuid)
     RETURNS record
     LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
+IF EXISTS (SELECT 1 FROM public.chat c WHERE c.sellerid = var_sellerid AND c.buyerid = var_buyerid AND c.advertisementid = var_advertisementid) THEN
+    SELECT c.id
+	INTO ret_chatid
+    FROM public.Chat c
+    WHERE c.sellerid = var_sellerid AND c.buyerid = var_buyerid AND c.advertisementid = var_advertisementid;
+	ret_success := false;
+	ELSE
 	INSERT INTO public.Chat(ID, SellerID, BuyerID, AdvertisementType, AdvertisementID, ISActive, CreatedDateTime, IsDeleted, ModifiedDateTime)
     VALUES (id, var_sellerid, var_buyerid, var_advertisementtype, var_advertisementid, 'true', CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     ret_success := true;
     ret_chatid := id;
+	END IF;
 END;
 $BODY$;
-
 
 /* -------Delete chat functon ----------- */
 CREATE OR REPLACE FUNCTION public.deletechat(
@@ -1592,16 +1602,22 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying, message character varying, messagedate timestamp ) 
+    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying,  price numeric, title character varying, description character varying , message character varying, messagedate timestamp without time zone) 
     LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE 
     ROWS 1000
 AS $BODY$
+DECLARE
+var_advertisementtype  character varying;
 BEGIN
+	SELECT a.advertisementtype
+	INTO var_advertisementtype
+	FROM public.Advertisement a, public.Chat c
+	WHERE a.id = c.advertisementid;
 	RETURN QUERY
-	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username), 
+	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username),   a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description,
 	(
 		SELECT m.message 
 		FROM public.message m
@@ -1621,8 +1637,22 @@ BEGIN
 	ON c.sellerid = s.id AND s.isdeleted = false AND s.id != var_userid
 	LEFT JOIN public.User as b
 	ON c.buyerid = b.id AND b.isdeleted = false AND b.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON c.advertisementid = a.id AND a.isdeleted = false
+	--JOIN ONTO THE CORRECT ADD TYPE
+    LEFT JOIN public.Textbook as txb
+    ON a.entityid = txb.id AND txb.isdeleted = false
+	LEFT JOIN public.Tutor as tut
+	ON tut.id = a.entityid AND tut.isdeleted = false
+	LEFT JOIN public.Notes n
+	ON n.id = a.entityid AND n.isdeleted = false
+	LEFT JOIN public.module nmod
+	ON nmod.id = n.moduleid AND nmod.isdeleted = false
+	LEFT JOIN public.accomodation acc
+	ON acc.id = a.entityid AND acc.isdeleted = false
+	LEFT JOIN public.accomodationtype act
+	ON act.code = acc.accomodationtypecode
 	WHERE c.isactive = true  AND (c.sellerid = var_userid OR c.buyerid = var_userid);
-
 
 END;
 $BODY$;
@@ -1767,59 +1797,99 @@ AS $BODY$
 DECLARE
 var_advertisementtype  character varying;
 BEGIN
-SELECT a.advertisementtype 
-INTO var_advertisementtype
-FROM public.Advertisement a, public.Rating r
-WHERE a.id = r.advertisementid;
-IF var_advertisementtype = 'TXB' THEN
+	SELECT a.advertisementtype
+	INTO var_advertisementtype
+	FROM public.Advertisement a, public.Rating r
+	WHERE a.id = r.advertisementid;
 	RETURN QUERY
-	SELECT r.id, u.username, a.price, t.name, a.description
+	SELECT r.id, COALESCE(s.username, b.username), a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description
+    FROM public.Rating as r
+	--This is to see if the other user is the seller
+	LEFT JOIN public.User as s
+	ON r.sellerid = s.id AND s.isdeleted = false AND s.id != var_userid
+	--This is to see if the other user is the buyer
+	LEFT JOIN public.User as b
+	ON r.buyerid = b.id AND b.isdeleted = false AND b.id != var_userid
+	LEFT JOIN public.Advertisement as a
+	ON r.advertisementid = a.id AND a.isdeleted = false
+	--JOIN ONTO THE CORRECT ADD TYPE
+    LEFT JOIN public.Textbook as txb
+    ON a.entityid = txb.id AND txb.isdeleted = false
+	LEFT JOIN public.Tutor as tut
+	ON tut.id = a.entityid AND tut.isdeleted = false
+	LEFT JOIN public.Notes n
+	ON n.id = a.entityid AND n.isdeleted = false
+	LEFT JOIN public.module nmod
+	ON nmod.id = n.moduleid AND nmod.isdeleted = false
+	LEFT JOIN public.accomodation acc
+	ON acc.id = a.entityid AND acc.isdeleted = false
+	LEFT JOIN public.accomodationtype act
+	ON act.code = acc.accomodationtypecode
+    WHERE r.isdeleted = false AND r.sellerrating is null AND r.buyerid = var_userid;
+END;
+$BODY$;
+
+/* ---------- Ratings as a seller dasboard function  --------- */
+
+CREATE OR REPLACE FUNCTION public.sellerratings(
+	var_userid uuid)
+    RETURNS TABLE(id uuid, username character varying, rating numeric, comment character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT r.id, u.username, r.sellerrating, r.sellercomments 
     FROM public.Rating as r
 	LEFT JOIN public.User as u 
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-    LEFT JOIN public.Textbook as t
-    ON a.entityid = t.id
-    WHERE r.isdeleted = false;
-ELSEIF var_advertisementtype = 'NTS' THEN
-RETURN QUERY
-	SELECT r.id, u.username, a.price, m.modulecode, a.description
-    FROM public.Rating as r
-	LEFT JOIN public.User as u
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-   LEFT JOIN public.Notes as n
-	ON a.entityid = n.id
-	LEFT JOIN public.Module as m
-	ON m.id = n.moduleid AND m.isdeleted = false
-    WHERE r.isdeleted = false;
+	ON r.buyerid = u.id AND u.id != var_userid
+	WHERE r.isdeleted = false AND r.sellerrating is not null AND r.sellerid = var_userid;
 
-ELSEIF  var_advertisementtype = 'TUT' THEN
-RETURN QUERY
-	SELECT r.id, u.username, a.price, tu.subject, a.description
-    FROM public.Rating as r
-	LEFT JOIN public.User as u
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-    LEFT JOIN public.Tutor as tu
-	ON a.entityid = tu.id
-    WHERE r.isdeleted = false;
+END;
+$BODY$;
 
-ELSEIF  var_advertisementtype = 'ACD' THEN
-RETURN QUERY
-	SELECT r.id, u.username, a.price, ac.location, a.description
+/* ---------- Ratings as a buyer dasboard function  --------- */
+CREATE OR REPLACE FUNCTION public.buyerratings(
+	var_userid uuid)
+    RETURNS TABLE(id uuid, username character varying, rating numeric, comment character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT r.id, u.username, r.buyerrating, r.buyercomments 
     FROM public.Rating as r
-	LEFT JOIN public.User as u
-	ON r.sellerid = u.id AND u.isdeleted = false AND u.id != var_userid
-	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
-    LEFT JOIN public.Accomodation as ac
-	ON a.entityid = ac.id
-    WHERE r.isdeleted = false;
-END IF;
+	LEFT JOIN public.User as u 
+	ON r.sellerid = u.id AND u.id != var_userid
+	WHERE r.isdeleted = false AND r.buyerrating is not null AND r.buyerid = var_userid;
+
+END;
+$BODY$;
+
+/* ---------- View interested buyers function  --------- */
+CREATE OR REPLACE FUNCTION public.getinterestedbuyers(
+	var_userid uuid,
+	var_advertisementid uuid)
+    RETURNS TABLE(username character varying, advertisementid uuid, sellerid uuid, buyerid uuid) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT u.username, c.advertisementid, c.sellerid, c.buyerid
+    FROM public.Chat as c
+	LEFT JOIN public.User as u 
+	ON c.buyerid = u.id 
+	WHERE c.israted = false AND c.advertisementid = var_advertisementid AND c.sellerid = var_userid;
+
 END;
 $BODY$;
 
@@ -2082,22 +2152,21 @@ VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e
 
 /* ---- INSERT CHAT DATA ---- */
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'TXB', 'fced8299-1095-4ca1-8a42-feb8f83eed2f', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'TXB', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'ACD','a5c663a1-ffff-43fe-8475-b2d2075a3599', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'ACD','81dc2379-aeb9-4279-865b-bdb46edc5db5', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'NTS', '95f1a163-1baf-41d1-a298-3626f1fc6bb7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'NTS', '76151522-5437-4fe7-86b9-3dfa11d43cb6', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '711f58f8-f469-4a44-b83a-7f21d1f24918', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'TXB', 'dcf1900b-f8f3-439b-8625-b8ad7a6fde15', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'TUT', '06abf31a-3165-48ad-87b3-75ff2a6c0225', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-
-/* ---- INSERT MESSAGE DATA ---- */
+/*---- INSERT MESSAGE DATA ---- */
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hi i am interested in your ad', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello this still works', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Very interested', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'Yes this is great', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 'Cool, let us talk price', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 /* ---- INSERT RATING DATA ---- */
 INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)

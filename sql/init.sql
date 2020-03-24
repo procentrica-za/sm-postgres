@@ -1746,7 +1746,7 @@ AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-IF EXISTS (SELECT 1 FROM public.rating r WHERE r.advertisementid = var_advertisementid) THEN
+IF EXISTS (SELECT 1 FROM public.rating r WHERE r.advertisementid = var_advertisementid AND r.buyerid = var_buyerid) THEN
 		ret_rated := false;
         ret_ratingid := '00000000-0000-0000-0000-000000000000';
     ELSE    
@@ -1876,7 +1876,7 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.getinterestedbuyers(
 	var_userid uuid,
 	var_advertisementid uuid)
-    RETURNS TABLE(username character varying, advertisementid uuid, sellerid uuid, buyerid uuid) 
+    RETURNS TABLE(username character varying, advertisementid uuid, advertisementtype character varying, sellerid uuid, buyerid uuid) 
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE 
@@ -1884,7 +1884,7 @@ CREATE OR REPLACE FUNCTION public.getinterestedbuyers(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT u.username, c.advertisementid, c.sellerid, c.buyerid
+	SELECT u.username, c.advertisementid, c.advertisementtype, c.sellerid, c.buyerid
     FROM public.Chat as c
 	LEFT JOIN public.User as u 
 	ON c.buyerid = u.id 

@@ -1603,7 +1603,7 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying,  price numeric, title character varying, description character varying , message character varying, messagedate timestamp without time zone, isread boolean) 
+    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying, price numeric, title character varying, description character varying, message character varying, messagedate timestamp without time zone, isread boolean, messageauthor character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1620,7 +1620,7 @@ BEGIN
 	RETURN QUERY
 	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username),   a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description,
 	(
-		SELECT m.message 
+		SELECT m.message
 		FROM public.message m
 		WHERE m.chatid = c.id AND m.isdeleted = false
 		ORDER BY m.messagedate DESC
@@ -1636,6 +1636,15 @@ BEGIN
     (
 		SELECT m.isread
 		FROM public.message m
+		WHERE m.chatid = c.id AND m.isdeleted = false
+		ORDER BY m.messagedate DESC
+		limit 1
+	),
+	(
+		SELECT  u.username
+		FROM public.message m
+		INNER JOIN public.User as u
+        ON u.id = m.authorid 
 		WHERE m.chatid = c.id AND m.isdeleted = false
 		ORDER BY m.messagedate DESC
 		limit 1
@@ -1669,7 +1678,7 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.getchat(
 	var_userid uuid,
 	var_chatid uuid)
-    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone, isread boolean) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1681,7 +1690,7 @@ BEGIN
    	    SET isread = true
  WHERE m.authorid != var_userid;
 RETURN QUERY
-SELECT m.id, u.username, m.message, m.messagedate
+SELECT m.id, u.username, m.message, m.messagedate, m.isread
 FROM public.Message as m
 INNER JOIN public.Chat as c
 ON m.chatid = c.id

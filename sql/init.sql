@@ -270,6 +270,7 @@ CREATE TABLE public.Message (
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     Message Varchar(1000),
     MessageDate timestamp,
+    IsRead Boolean DEFAULT(false),
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
@@ -1602,7 +1603,7 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying,  price numeric, title character varying, description character varying , message character varying, messagedate timestamp without time zone) 
+    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying,  price numeric, title character varying, description character varying , message character varying, messagedate timestamp without time zone, isread boolean) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1627,6 +1628,13 @@ BEGIN
 	), 
 	(
 		SELECT m.messagedate
+		FROM public.message m
+		WHERE m.chatid = c.id AND m.isdeleted = false
+		ORDER BY m.messagedate DESC
+		limit 1
+	),
+    (
+		SELECT m.isread
 		FROM public.message m
 		WHERE m.chatid = c.id AND m.isdeleted = false
 		ORDER BY m.messagedate DESC
@@ -1659,8 +1667,9 @@ $BODY$;
 
 /* -----View Messages function -------- */
 CREATE OR REPLACE FUNCTION public.getchat(
+	var_userid uuid,
 	var_chatid uuid)
-    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp ) 
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1668,6 +1677,9 @@ CREATE OR REPLACE FUNCTION public.getchat(
     ROWS 1000
 AS $BODY$
 BEGIN
+ UPDATE public.Message as m
+   	    SET isread = true
+ WHERE m.authorid != var_userid;
 RETURN QUERY
 SELECT m.id, u.username, m.message, m.messagedate
 FROM public.Message as m
@@ -1680,6 +1692,7 @@ WHERE m.isdeleted = false AND c.id = var_chatid AND c.isactive = true AND m.auth
 ORDER BY m.messagedate;
 END;
 $BODY$;
+
 
 
 
@@ -2167,6 +2180,8 @@ INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedD
 VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Very interested', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
 VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 'Cool, let us talk price', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('e99b53d7-d899-4311-b5fe-995eecf5ce90', 'b08fda22-aa4f-4abc-a8ad-4edb06293212', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Do not show', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
 
 /* ---- INSERT RATING DATA ---- */
 INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)

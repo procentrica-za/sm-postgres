@@ -1690,7 +1690,7 @@ BEGIN
    	    SET isread = true
  WHERE m.authorid != var_userid;
 RETURN QUERY
-SELECT m.id, u.username, m.message, m.messagedate, m.isread
+SELECT m.id, u.username, m.message, m.messagedate
 FROM public.Message as m
 INNER JOIN public.Chat as c
 ON m.chatid = c.id

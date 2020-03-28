@@ -1678,7 +1678,7 @@ $BODY$;
 CREATE OR REPLACE FUNCTION public.getchat(
 	var_userid uuid,
 	var_chatid uuid)
-    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone, isread boolean) 
+    RETURNS TABLE(id uuid, username character varying, message character varying, messagedate timestamp without time zone) 
     LANGUAGE 'plpgsql'
 
     COST 100

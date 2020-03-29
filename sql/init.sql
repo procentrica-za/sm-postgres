@@ -1674,6 +1674,29 @@ BEGIN
 END;
 $BODY$;
 
+
+/* ---------- View unread messages function  --------- */
+CREATE OR REPLACE FUNCTION public.unreadmessages(
+	var_userid uuid,
+	OUT res_unreadmessages boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Message m 
+			   INNER JOIN public.Chat as c ON m.chatid = c.id WHERE m.isdeleted = false AND m.authorid != var_userid AND m.isread = false AND c.isactive = true) THEN
+        res_unreadmessages := true;
+    ELSE
+        res_unreadmessages := false;
+    END IF;
+    
+END;
+$BODY$;
+
 /* -----View Messages function -------- */
 CREATE OR REPLACE FUNCTION public.getchat(
 	var_userid uuid,

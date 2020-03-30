@@ -1603,7 +1603,7 @@ $BODY$;
 /* ---------- View active chats function  --------- */
 CREATE OR REPLACE FUNCTION public.getactivechats(
 	var_userid uuid)
-    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying,  price numeric, title character varying, description character varying , message character varying, messagedate timestamp without time zone, isread boolean) 
+    RETURNS TABLE(id uuid, advertisementtype character varying, advertisementid uuid, username character varying, price numeric, title character varying, description character varying, message character varying, messagedate timestamp without time zone, isread boolean, messageauthor character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1620,7 +1620,7 @@ BEGIN
 	RETURN QUERY
 	SELECT c.id, c.advertisementtype, c.advertisementid, COALESCE(s.username, b.username),   a.price, COALESCE(txb.name, COALESCE(act.name, COALESCE(nmod.name, tut.subject))), a.description,
 	(
-		SELECT m.message 
+		SELECT m.message
 		FROM public.message m
 		WHERE m.chatid = c.id AND m.isdeleted = false
 		ORDER BY m.messagedate DESC
@@ -1636,6 +1636,15 @@ BEGIN
     (
 		SELECT m.isread
 		FROM public.message m
+		WHERE m.chatid = c.id AND m.isdeleted = false
+		ORDER BY m.messagedate DESC
+		limit 1
+	),
+	(
+		SELECT  u.username
+		FROM public.message m
+		INNER JOIN public.User as u
+        ON u.id = m.authorid 
 		WHERE m.chatid = c.id AND m.isdeleted = false
 		ORDER BY m.messagedate DESC
 		limit 1
@@ -1662,6 +1671,29 @@ BEGIN
 	ON act.code = acc.accomodationtypecode
 	WHERE c.isactive = true  AND (c.sellerid = var_userid OR c.buyerid = var_userid);
 
+END;
+$BODY$;
+
+
+/* ---------- View unread messages function  --------- */
+CREATE OR REPLACE FUNCTION public.unreadmessages(
+	var_userid uuid,
+	OUT res_unreadmessages boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Message m 
+			   INNER JOIN public.Chat as c ON m.chatid = c.id WHERE m.authorid != var_userid AND m.isread = false AND c.isactive = true AND c.sellerid = var_userid OR c.buyerid = var_userid) THEN
+        res_unreadmessages := true;
+    ELSE
+        res_unreadmessages := false;
+    END IF;
+    
 END;
 $BODY$;
 

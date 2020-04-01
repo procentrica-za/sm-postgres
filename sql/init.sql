@@ -146,7 +146,7 @@ CREATE TABLE public.Tutor (
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     Venue Varchar(100) NOT NULL,
     NotesIncluded Boolean NOT NULL,
-    Terms Varchar(20) NOT NULL,
+    Terms Varchar(100) NOT NULL,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
@@ -172,7 +172,7 @@ CREATE TABLE public.Accomodation (
         REFERENCES public.Institution (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     Location Varchar(255) NOT NULL,
-    DistanceToCampus Varchar(20) NOT NULL,
+    DistanceToCampus numeric NOT NULL,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
@@ -286,6 +286,24 @@ CREATE TABLE public.Message (
 
 /* ---- Creating all functions needed for CRUD functions to be used by the CRUD service ---- */
 
+/* ---- Get all module codes that exist in the database function ---- */
+
+CREATE OR REPLACE FUNCTION public.getmodulecodes(
+	)
+    RETURNS TABLE(modulecode character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT m.modulecode
+    FROM public.module m
+    WHERE isdeleted = false;
+END;
+$BODY$;
 
 /* ---- Register User Function ---- */
 CREATE OR REPLACE FUNCTION public.registeruser(
@@ -594,7 +612,7 @@ CREATE OR REPLACE FUNCTION public.addaccomodation(
 	var_accomodationTypeCode character varying,
 	var_institutionname character varying,
 	var_location character varying,
-    var_distanceToCampus character varying,
+    var_distanceToCampus numeric,
 	OUT ret_success bool,
 	OUT ret_accomodationid uuid)
     RETURNS record
@@ -780,7 +798,13 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.gettextbookadvertisements(
 	var_limit numeric,
-    var_isselling boolean
+	var_isselling boolean,
+    var_maxprice numeric,
+    var_modulecode character varying,
+	var_name character varying,
+	var_edition character varying,
+	var_quality character varying,
+	var_author character varying
 	)
     RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying) 
     LANGUAGE 'plpgsql'
@@ -788,7 +812,6 @@ CREATE OR REPLACE FUNCTION public.gettextbookadvertisements(
     COST 100
     VOLATILE 
     ROWS 1000
-    
 AS $BODY$
 BEGIN
 	RETURN QUERY
@@ -798,7 +821,7 @@ BEGIN
 	ON a.entityid = t.id
 	INNER JOIN public.Module as m
 	ON m.id = t.moduleid AND m.isdeleted = false
-	WHERE 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
+	WHERE var_maxprice >= a.price AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.name LIKE var_name AND t.edition LIKE var_edition AND t.quality LIKE var_quality AND t.author LIKE var_author AND m.ModuleCode LIKE var_modulecode
 	LIMIT var_limit;
 END;
 $BODY$;
@@ -808,7 +831,14 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.gettutoradvertisements(
 	var_limit numeric,
-    var_isselling boolean
+    var_isselling boolean,
+    var_maxprice numeric,
+    var_subject character varying,
+	var_yearcompleted character varying,
+	var_venue character varying,
+	var_notesincluded character varying,
+	var_terms character varying,
+    var_modulecode character varying
 	)
     RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying) 
     LANGUAGE 'plpgsql'
@@ -826,7 +856,7 @@ BEGIN
 	ON a.entityid = t.id
 	INNER JOIN public.Module as m
 	ON m.id = t.moduleid AND m.isdeleted = false
-	WHERE 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
+	WHERE var_maxprice >= a.price AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.subject LIKE var_subject AND t.yearcompleted LIKE var_yearCompleted AND t.venue LIKE var_venue AND CAST(t.notesincluded AS character varying) LIKE var_notesIncluded AND t.terms LIKE var_terms AND m.ModuleCode LIKE var_modulecode
 	LIMIT var_limit;
 END;
 $BODY$;
@@ -834,9 +864,13 @@ $BODY$;
 
 /* ---- Get Note Advertisements Ammount dictated by varibale sent to the function. ---- */
 
+
+
 CREATE OR REPLACE FUNCTION public.getnoteadvertisements(
-	var_limit numeric,
-    var_isselling boolean
+    var_limit numeric,
+    var_isselling boolean,
+    var_maxprice numeric,
+    var_modulecode character varying
 	)
     RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying) 
     LANGUAGE 'plpgsql'
@@ -854,7 +888,7 @@ BEGIN
 	ON a.entityid = n.id
 	INNER JOIN public.Module as m
 	ON m.id = n.moduleid AND m.isdeleted = false
-	WHERE 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
+	WHERE var_maxprice >= a.price AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND m.ModuleCode LIKE var_modulecode
 	LIMIT var_limit;
 END;
 $BODY$;
@@ -862,10 +896,15 @@ $BODY$;
 /* ---- Get Accomodation Advertisements Ammount dictated by varibale sent to the function. ---- */
 
 CREATE OR REPLACE FUNCTION public.getaccomodationadvertisements(
-	var_limit numeric,
-    var_isselling boolean
+    var_limit numeric,
+    var_isselling boolean,
+    var_maxprice numeric,
+    var_accomodationcode character varying,
+    var_location character varying,
+    var_distancetocampus numeric,
+    var_institutionname character varying
 	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus character varying, institution character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institution character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -881,7 +920,7 @@ BEGIN
 	ON ad.entityid = ac.id
 	INNER JOIN public.Institution as i
 	ON i.id = ac.institutionid AND i.isdeleted = false
-	WHERE 'ACD' = ad.advertisementtype AND var_isselling = ad.isselling AND ad.isdeleted = false
+	WHERE var_maxprice >= ad.price AND 'ACD' = ad.advertisementtype AND var_isselling = ad.isselling AND ad.isdeleted = false AND i.name LIKE var_institutionname AND ac.accomodationtypecode LIKE var_accomodationcode AND ac.location LIKE var_location AND ac.distancetocampus <= var_distancetocampus
 	LIMIT var_limit;
 END;
 $BODY$;
@@ -918,7 +957,7 @@ CREATE OR REPLACE FUNCTION public.getaccomodationadvertisementsbyuserid(
 	var_userid uuid,
 	var_limit numeric,
 	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus character varying, institution character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institution character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1164,8 +1203,8 @@ CREATE OR REPLACE FUNCTION public.getaccomodationbyfilter(
 	var_accomodationcode character varying,
     var_institutionname character varying,
     var_location character varying,
-    var_distancetocampus character varying)
-    RETURNS TABLE(id uuid, institution character varying, accomodationtypecode character varying, location character varying, distancetocampus character varying) 
+    var_distancetocampus numeric)
+    RETURNS TABLE(id uuid, institution character varying, accomodationtypecode character varying, location character varying, distancetocampus numeric) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1179,7 +1218,7 @@ BEGIN
     FROM public.Accomodation a
 	INNER JOIN public.Institution i  
 	ON i.id = a.institutionid AND i.isdeleted = false
-    WHERE i.name LIKE var_institutionname AND a.accomodationtypecode LIKE var_accomodationcode AND a.location LIKE var_location AND a.distancetocampus LIKE var_distancetocampus AND a.isdeleted = false;
+    WHERE i.name LIKE var_institutionname AND a.accomodationtypecode LIKE var_accomodationcode AND a.location LIKE var_location AND a.distancetocampus <= var_distancetocampus AND a.isdeleted = false;
 END;
 $BODY$;
 
@@ -1347,7 +1386,7 @@ CREATE OR REPLACE FUNCTION public.updateaccomodation(
 	var_accomodationtypecode character varying,
 	var_institutionname character varying,
 	var_location character varying,
-	var_distancetocampus character varying,
+	var_distancetocampus numeric,
 	OUT res_updated boolean,
 	OUT res_error character varying)
     RETURNS record
@@ -2004,21 +2043,21 @@ VALUES ('ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', 'Engineering Advanced', '2018', 
 
 /* ---- ACCOMODATION ---- */
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('1193447d-5dd6-493f-8b0c-846c88f4e92c', 'APT', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Hatfield', '1.2Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('1193447d-5dd6-493f-8b0c-846c88f4e92c', 'APT', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Hatfield', 1.2, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d4b1ef8d-cac8-4793-96b9-51f1024affc7', 'COM', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '2.8Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('d4b1ef8d-cac8-4793-96b9-51f1024affc7', 'COM', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', 2.8, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('6032734b-fe59-4be7-b953-c864ad8ac0b7', 'HSE', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', '4.8Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('6032734b-fe59-4be7-b953-c864ad8ac0b7', 'HSE', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', 4.8, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('845f4a14-617b-4010-9dc4-e9cd84f47913', 'GDC', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Pretoria CBD', '8.5Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('845f4a14-617b-4010-9dc4-e9cd84f47913', 'GDC', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Pretoria CBD', 8.5, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('92842317-c6c6-4bac-9b30-aa85fba4af0a', 'APT', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '5.4Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('92842317-c6c6-4bac-9b30-aa85fba4af0a', 'APT', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', 5.4, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('53eaf527-a09b-4fb0-93b7-558ab1e816b0', 'COM', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', '0.5Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('53eaf527-a09b-4fb0-93b7-558ab1e816b0', 'COM', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', 0.5, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('0a9e2831-1783-4926-8c38-412fba6f7e11', 'HSE', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', '8,9Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('0a9e2831-1783-4926-8c38-412fba6f7e11', 'HSE', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', 8.9, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('8bf04861-4b06-4ea5-a0ca-63cc839c3afa', 'GDC', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', '1.8Km', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('8bf04861-4b06-4ea5-a0ca-63cc839c3afa', 'GDC', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', 1.8, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 /* ---- NOTES ---- */
 INSERT INTO public.Notes(ID, ModuleID, CreatedDateTime, IsDeleted, ModifiedDateTime)

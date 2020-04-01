@@ -1688,12 +1688,15 @@ AS $BODY$
 DECLARE
 BEGIN
     IF EXISTS (SELECT 1 FROM public.Message m 
-			   INNER JOIN public.Chat as c ON m.chatid = c.id WHERE m.authorid != var_userid AND m.isread = false AND c.isactive = true AND c.sellerid = var_userid OR c.buyerid = var_userid) THEN
+			   INNER JOIN public.Chat as c ON m.chatid = c.id WHERE m.authorid != var_userid AND m.isread = false AND c.isactive = true AND c.sellerid = var_userid) THEN
         res_unreadmessages := true;
-    ELSE
+    ELSE IF EXISTS (SELECT 1 FROM public.Message m 
+			   INNER JOIN public.Chat as c ON m.chatid = c.id WHERE m.authorid != var_userid AND m.isread = false AND c.isactive = true AND c.buyerid = var_userid) THEN
+        res_unreadmessages := true;
+	ELSE
         res_unreadmessages := false;
     END IF;
-    
+    END IF;
 END;
 $BODY$;
 

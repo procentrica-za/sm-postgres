@@ -1816,19 +1816,18 @@ $BODY$;
 
 /*-------           Initial rating function    ------*/
 CREATE OR REPLACE FUNCTION public.ratebuyer(
-    var_advertisementid uuid,
-    var_buyerid uuid,
-    var_sellerid uuid,
-    var_buyerrating float,
-    var_buyercomments character varying,
-	OUT ret_rated bool,
+	var_advertisementid uuid,
+	var_buyerid uuid,
+	var_sellerid uuid,
+	var_buyerrating double precision,
+	var_buyercomments character varying,
+	OUT ret_rated boolean,
 	OUT ret_ratingid uuid)
     RETURNS record
     LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
@@ -1838,7 +1837,7 @@ IF EXISTS (SELECT 1 FROM public.rating r WHERE r.advertisementid = var_advertise
         ret_ratingid := '00000000-0000-0000-0000-000000000000';
     ELSE    
 	INSERT INTO public.Rating(ID, AdvertisementID, SellerID, BuyerID, BuyerRating, BuyerComments, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_advertisementid, var_buyerid, var_sellerid, var_buyerrating, var_buyercomments,  CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    VALUES (id, var_advertisementid, var_sellerid, var_buyerid, var_buyerrating, var_buyercomments,  CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     ret_rated := true;
     ret_ratingid := id;
     END IF;
@@ -2236,26 +2235,6 @@ VALUES ('1bd5e0d6-bc54-4806-afe2-8253ceb931d4' ,'c2b801b3-9faf-42bc-8de7-cad3401
 INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
 VALUES ('c2b801b3-9faf-42bc-8de7-cad34011d0b8', 'c46b896d-8e6d-4d90-bb1f-414cb3e6c61a', 'image3.jpeg', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-
-/* ---- INSERT CHAT DATA ---- */
-INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'TXB', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'ACD','81dc2379-aeb9-4279-865b-bdb46edc5db5', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('017774f7-d622-42a0-9449-4f44e72d62ef', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'NTS', '76151522-5437-4fe7-86b9-3dfa11d43cb6', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
-VALUES ('3f2cd790-f82a-4d17-b10c-3b37ec9dfc2c', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'TUT', '06abf31a-3165-48ad-87b3-75ff2a6c0225', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-/*---- INSERT MESSAGE DATA ---- */
-INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hi i am interested in your ad', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
-INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Very interested', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 'Cool, let us talk price', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
-VALUES ('e99b53d7-d899-4311-b5fe-995eecf5ce90', 'b08fda22-aa4f-4abc-a8ad-4edb06293212', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Do not show', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
 
 /* ---- INSERT RATING DATA ---- */
 INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)

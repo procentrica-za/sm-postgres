@@ -2176,7 +2176,7 @@ INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,Entit
 VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '6300','Situated in the heart of Hatfield, UP is a stone throw away.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','Default Notes Advertisement 1', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','These First year OBS notes are all you will need!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('d3b01bb0-e7b0-4a28-a2af-efda603c78db', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '150','Selling my amazing notes', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -2313,6 +2313,11 @@ INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, M
 VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b' ,'7082249b-79f9-4e3c-ad57-99560e5876c9', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
 VALUES ('7082249b-79f9-4e3c-ad57-99560e5876c9', 'd21a12b0-0dc1-4b50-8177-2635f38deba2', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6' ,'2f7b3e95-2836-41bf-a875-8589d1ff6985', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('2f7b3e95-2836-41bf-a875-8589d1ff6985', 'a1f6f5cd-cc20-42e1-9572-1286098f1d2c', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
 

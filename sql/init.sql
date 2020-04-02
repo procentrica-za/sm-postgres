@@ -2154,7 +2154,15 @@ VALUES ('a6feb6c0-9349-41f7-ac8e-96e0e0c28148', '7bb9d62d-c3fa-4e63-9f07-061f622
 
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '450','Default Tutoring Advertisement 1', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','Business management will be explained and simplified! contact me for details.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('65fffff4-c5a4-4969-b725-7bbd483332df', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '07783074-3f1d-4ae3-b27b-c075f34aacf9', '400','I will simplify this module and help calm the nerves. Notes are included too!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('617cca47-49bb-406f-b5e9-adcdde12e5d4', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', 'c184c2b9-4039-4b6f-964c-d95b0b9a358c', '250','Within the comfort of your home, you will learn all you need to about this module!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('e99605a1-53bb-41f2-81cc-3c8c670f0da7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '7e0e437c-aa29-488f-9202-36d281e70c40', '450','Worried you will now be able to pass ? give me a shout, and we will work through it.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', 'ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', '150','I was top of my class, we can make that happen for you too, together. Contact me now!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('81dc2379-aeb9-4279-865b-bdb46edc5db5', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','Cozy Hatfield accomodation, right by the gautrain.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -2277,9 +2285,35 @@ INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime
 VALUES ('1fd59172-dc66-4a5c-bbe7-90899b3accc4', 'ec446f04-8240-40e8-a6bb-117014ab4bc4', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
-VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501' ,'cbe3caeb-d4b2-46b6-8c55-25ea55de50eb', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501' ,'301390bc-a7f5-4953-9cff-4263db18d4f5', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
-VALUES ('cbe3caeb-d4b2-46b6-8c55-25ea55de50eb', '3b64723c-f8c2-4b1d-8b1d-8355bdb7f00d', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('301390bc-a7f5-4953-9cff-4263db18d4f5', '3b64723c-f8c2-4b1d-8b1d-8355bdb7f00d', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225' ,'cc2ec1b4-ad94-43d6-afa3-ee3c0e1b88ca', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('cc2ec1b4-ad94-43d6-afa3-ee3c0e1b88ca', '772898bf-953b-4d14-b778-8e47ce61c751', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('65fffff4-c5a4-4969-b725-7bbd483332df' ,'cfb07c4a-45d3-4de4-a487-0efeb6938de7', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('cfb07c4a-45d3-4de4-a487-0efeb6938de7', '2cd77ba8-2c49-469d-aead-b92bf516a21f', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('617cca47-49bb-406f-b5e9-adcdde12e5d4' ,'4acf796d-25bb-4963-b0c0-e8e60fae9b59', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('4acf796d-25bb-4963-b0c0-e8e60fae9b59', 'e8211ee3-6f0d-4d6b-9ecd-4003a62865e9', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('e99605a1-53bb-41f2-81cc-3c8c670f0da7' ,'a5bfa9ef-39da-4155-a7ed-85ef03938d8d', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('a5bfa9ef-39da-4155-a7ed-85ef03938d8d', '5dd207e3-a81a-4570-945d-9db45a78c042', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
+VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b' ,'301390bc-a7f5-4953-9cff-4263db18d4f5', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
+VALUES ('301390bc-a7f5-4953-9cff-4263db18d4f5', 'f3e6d3d3-ed60-4aa2-939e-4f76eb2ea67f', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
 
 
 

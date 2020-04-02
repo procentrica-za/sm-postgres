@@ -2310,9 +2310,9 @@ INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime
 VALUES ('a5bfa9ef-39da-4155-a7ed-85ef03938d8d', '5dd207e3-a81a-4570-945d-9db45a78c042', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO public.AdvertisementImage(AdvertisingID, ImageID, CreatedDateTime, ModifiedDateTime)
-VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b' ,'301390bc-a7f5-4953-9cff-4263db18d4f5', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b' ,'7082249b-79f9-4e3c-ad57-99560e5876c9', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime, ModifiedDateTime)
-VALUES ('301390bc-a7f5-4953-9cff-4263db18d4f5', 'd21a12b0-0dc1-4b50-8177-2635f38deba2', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('7082249b-79f9-4e3c-ad57-99560e5876c9', 'd21a12b0-0dc1-4b50-8177-2635f38deba2', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
 

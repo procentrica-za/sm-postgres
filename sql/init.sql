@@ -1897,7 +1897,7 @@ BEGIN
 	LEFT JOIN public.User as b
 	ON r.buyerid = b.id AND b.isdeleted = false AND b.id != var_userid
 	LEFT JOIN public.Advertisement as a
-	ON r.advertisementid = a.id AND a.isdeleted = false
+	ON r.advertisementid = a.id 
 	--JOIN ONTO THE CORRECT ADD TYPE
     LEFT JOIN public.Textbook as txb
     ON a.entityid = txb.id AND txb.isdeleted = false

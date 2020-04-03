@@ -1947,6 +1947,25 @@ BEGIN
 END;
 $BODY$;
 
+CREATE OR REPLACE FUNCTION public.ratingstodo(
+	var_userid uuid,
+	OUT res_outstanding boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.Rating r WHERE r.isdeleted = false AND r.sellerrating is null AND r.buyerid = var_userid) THEN
+        res_outstanding := true;
+	ELSE
+        res_outstanding := false;
+    END IF;
+END;
+$BODY$;
+
 /* ---------- Ratings as a seller dasboard function  --------- */
 
 CREATE OR REPLACE FUNCTION public.sellerratings(

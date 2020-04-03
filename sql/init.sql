@@ -2147,9 +2147,9 @@ VALUES ('9d849400-2320-4133-948c-14241b7ee410', '7bb9d62d-c3fa-4e63-9f07-061f622
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('155ae020-1499-4e33-aaea-bbd343931cc6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '7dda5091-4a6e-42dd-b6e1-7ccc8be7e5cd', '500','Business strategy advanced is the subject to do! get this amazing textbook now.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('73e8c510-34f3-4fc0-94de-d05d227e1f56', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '47db44d5-e0ae-4853-93e3-b7c85ff5b65c', '200','Business implementation! Looking for a fast sell! Selling on Campus! Contact me now!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('73e8c510-34f3-4fc0-94de-d05d227e1f56', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '47db44d5-e0ae-4853-93e3-b7c85ff5b65c', '200','Business implementation! Looking for a fast sell! Selling on Campus! Contact me now!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('a6feb6c0-9349-41f7-ac8e-96e0e0c28148', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','Great condition, honest sale. Message me for more details. Only cash accepted', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('a6feb6c0-9349-41f7-ac8e-96e0e0c28148', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','Great condition, honest sale. Message me for more details. Only cash accepted', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 
 
@@ -2160,9 +2160,9 @@ VALUES ('65fffff4-c5a4-4969-b725-7bbd483332df', '7bb9d62d-c3fa-4e63-9f07-061f622
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('617cca47-49bb-406f-b5e9-adcdde12e5d4', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', 'c184c2b9-4039-4b6f-964c-d95b0b9a358c', '250','Within the comfort of your home, you will learn all you need to about this module!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('e99605a1-53bb-41f2-81cc-3c8c670f0da7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '7e0e437c-aa29-488f-9202-36d281e70c40', '450','Worried you will now be able to pass ? give me a shout, and we will work through it.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('e99605a1-53bb-41f2-81cc-3c8c670f0da7', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', '7e0e437c-aa29-488f-9202-36d281e70c40', '450','Worried you will now be able to pass ? give me a shout, and we will work through it.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', 'ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', '150','I was top of my class, we can make that happen for you too, together. Contact me now!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', 'ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', '150','I was top of my class, we can make that happen for you too, together. Contact me now!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('81dc2379-aeb9-4279-865b-bdb46edc5db5', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','Cozy Hatfield accomodation, right by the gautrain.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -2171,9 +2171,9 @@ VALUES ('4dbe73b4-e811-4a5e-91e0-331d14942067', '7bb9d62d-c3fa-4e63-9f07-061f622
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('221cbdbc-9aa4-410b-96a7-26f07dd1ca82', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '845f4a14-617b-4010-9dc4-e9cd84f47913', '5000','This house in the CBD of pretoria will have more than enough room for you and your friends! Drinking is allowed.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d8203552-bf56-4228-9864-cefc3dc957e6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '8bf04861-4b06-4ea5-a0ca-63cc839c3afa', '2750','This apartment in the CBD is very cost effective and is safe', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('d8203552-bf56-4228-9864-cefc3dc957e6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '8bf04861-4b06-4ea5-a0ca-63cc839c3afa', '2750','This apartment in the CBD is very cost effective and is safe', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '6300','Situated in the heart of Hatfield, UP is a stone throw away.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '6300','Situated in the heart of Hatfield, UP is a stone throw away.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','These First year OBS notes are all you will need!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -2183,9 +2183,9 @@ VALUES ('d3b01bb0-e7b0-4a28-a2af-efda603c78db', '7bb9d62d-c3fa-4e63-9f07-061f622
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('3f012de7-6e81-429c-9467-e8f6b7bceb44', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '100','Selling these notes at a very fair price! My notes are digital so they can be emailed to you', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('ef3c2429-8a0b-4af7-bc3f-ce8018c475d5', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '75','I made these notes religiously, and aced every paper.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('ef3c2429-8a0b-4af7-bc3f-ce8018c475d5', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '75','I made these notes religiously, and aced every paper.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d50f09da-eeea-4732-a600-479f3ea67477', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '250','These notes are guaranteed to make you pass', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('d50f09da-eeea-4732-a600-479f3ea67477', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '250','These notes are guaranteed to make you pass', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 
 
@@ -2320,14 +2320,24 @@ INSERT INTO public.Image(ID, PathString , FileName, IsMainImage, CreatedDateTime
 VALUES ('2f7b3e95-2836-41bf-a875-8589d1ff6985', 'a1f6f5cd-cc20-42e1-9572-1286098f1d2c', 'image3', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
+/* ---- INSERT CHAT DATA ---- */
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 'TXB', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Chat(ID, SellerID , BuyerID, AdvertisementType, AdvertisementID, IsActive, CreatedDateTime, ModifiedDateTime)
+VALUES ('b08fda22-aa4f-4abc-a8ad-4edb06293212', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'ACD','81dc2379-aeb9-4279-865b-bdb46edc5db5', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+
+/*---- INSERT MESSAGE DATA ---- */
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('1afd7f30-d8bc-4f6a-918a-8998d8a5c333', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 'Hi, i am interested in your ad', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('d604b46b-edd4-4273-bb6d-9712907fdce4', '9924e14c-fa0c-4ae3-9a29-48d3d6f40172', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 'Hello there, does the price work well for you?', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO public.Message(ID, ChatID , AuthorID, Message, MessageDate, CreatedDateTime, ModifiedDateTime)
+VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', 'b08fda22-aa4f-4abc-a8ad-4edb06293212', '711f58f8-f469-4a44-b83a-7f21d1f24918', 'Hello Jack, I would like to get some more details about the hatfield accomodation.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
 /* ---- INSERT RATING DATA ---- */
 INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
-VALUES ('23c571a5-4004-4f98-ac65-d426e022f59a', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 5,  'What a person to deal with, he paid in cash', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
-INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
-VALUES ('574ce532-4b5c-497c-a767-87e7ef59bb2e', '06abf31a-3165-48ad-87b3-75ff2a6c0225', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 2,  'Horrible person to sell to, arrived to deliver drunk', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
-INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
-VALUES ('76ac4759-969d-42ea-9075-dd6ca051cb08', '81dc2379-aeb9-4279-865b-bdb46edc5db5', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 3,  'Gerard was tricky to get a hold of most of the time', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
-INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
-VALUES ('6cbe38ab-0b2e-4e64-954b-46223e0d64cf', '76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 4,  'Gerard bought my notes without a hassle', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+VALUES ('23c571a5-4004-4f98-ac65-d426e022f59a', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 5,  'What a person to deal with, he paid in cash too', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+
+

@@ -2058,11 +2058,11 @@ VALUES ('888b571a-1819-48c8-a8f1-27686b55eb3b', '65f21344-e49e-4f29-bccd-a7e3905
 INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES('382e4fbb-5b63-4a1a-b3ee-162e256e861b','2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Strategy Principles', '1', 'Used' , 'Franklin James', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES('c05d560b-1ee2-4077-b53c-4c4bea5865cd','2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Implementation Principles', '2', 'New' , 'Johan Rupert', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES('c05d560b-1ee2-4077-b53c-4c4bea5865cd','2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Business Principles', '2', 'New' , 'Johan Rupert', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES('7dda5091-4a6e-42dd-b6e1-7ccc8be7e5cd','e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Business Strategy Advanced', '1', 'Used' , 'Jon Snow', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES('47db44d5-e0ae-4853-93e3-b7c85ff5b65c','e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Business Implementation Advanced', '3', 'Used' , 'Swole Casarole', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES('47db44d5-e0ae-4853-93e3-b7c85ff5b65c','e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Business Advanced', '3', 'Used' , 'Swole Casarole', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES('25eceef0-eef4-4ea5-bc06-abc1ffce0b6d','433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Engineering Principles', '1', 'Used' , 'Isaac Newton', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
@@ -2076,17 +2076,17 @@ VALUES('64a4c6c0-bf8e-4728-a650-579003bc6857','69ba5241-2059-40b0-b02a-7d983d01b
 
 /* ---- TUTORS ---- */ 
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('0339d90d-bb7b-4054-905a-15feb960f53e', 'Business Management', '2017', '2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Campus', true, '5 Lessons', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('0339d90d-bb7b-4054-905a-15feb960f53e', 'Business', '2017', '2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Campus', true, '5 Lessons', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('07783074-3f1d-4ae3-b27b-c075f34aacf9', 'Business Management', '2018', '2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Both', true, 'Pay per Lesson', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('07783074-3f1d-4ae3-b27b-c075f34aacf9', 'Business ', '2018', '2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Both', true, 'Pay per Lesson', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('c184c2b9-4039-4b6f-964c-d95b0b9a358c', 'Business Management Advanced', '2019', 'e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Home', true, 'Whole Semester', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('c184c2b9-4039-4b6f-964c-d95b0b9a358c', 'Business ', '2019', 'e47aa688-d18b-4c88-a93f-ecc5836a88f0', 'Home', true, 'Whole Semester', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('7e0e437c-aa29-488f-9202-36d281e70c40', 'Engineering', '2016', '433ce13a-22ce-4f53-8a75-c7b8e190f15f', 'Campus', true, '10 Lessons', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('b8a5ee1b-0696-4d22-8e1d-d325a673980c', 'Engineering Advanced ', '2017', '69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Home', true, 'Exam Preparations', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('b8a5ee1b-0696-4d22-8e1d-d325a673980c', 'Engineering', '2017', '69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Home', true, 'Exam Preparations', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', 'Engineering Advanced', '2018', '69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Campus', true, 'Contact for details', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', 'Engineering', '2018', '69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Campus', true, 'Contact for details', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 /* ---- ACCOMODATION ---- */
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
@@ -2096,9 +2096,9 @@ VALUES ('d4b1ef8d-cac8-4793-96b9-51f1024affc7', 'COM', '9d68ff9f-01a0-476e-ac3a-
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('6032734b-fe59-4be7-b953-c864ad8ac0b7', 'HSE', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Brooklyn', 4.8, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('845f4a14-617b-4010-9dc4-e9cd84f47913', 'GDC', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'Pretoria CBD', 8.5, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('845f4a14-617b-4010-9dc4-e9cd84f47913', 'GDC', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', 'PTA CBD', 8.5, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('92842317-c6c6-4bac-9b30-aa85fba4af0a', 'APT', 'fb901315-d971-4347-880b-bc8c6292386f', 'Johannesburg CBD', 5.4, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('92842317-c6c6-4bac-9b30-aa85fba4af0a', 'APT', 'fb901315-d971-4347-880b-bc8c6292386f', 'JHB CBD', 5.4, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('53eaf527-a09b-4fb0-93b7-558ab1e816b0', 'COM', 'fb901315-d971-4347-880b-bc8c6292386f', 'Auckland Park', 0.5, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Accomodation(ID, AccomodationTypeCode, InstitutionID, Location, DistanceToCampus, CreatedDateTime, IsDeleted, ModifiedDateTime)

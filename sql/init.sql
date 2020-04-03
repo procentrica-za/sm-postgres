@@ -20,6 +20,15 @@ CREATE TABLE public.AdvertisementImage (
     ModifiedDateTime timestamp,
     PRIMARY KEY(AdvertisingID, ImageID)
 );
+
+CREATE TABLE public.Institution (
+    ID uuid PRIMARY KEY NOT NULL,
+    Name Varchar(50) NOT NULL,
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
 CREATE TABLE public.User (
     ID uuid PRIMARY KEY NOT NULL,
     Username Varchar(50) NOT NULL,
@@ -27,7 +36,12 @@ CREATE TABLE public.User (
     Name Varchar(64) NOT NULL,
     Surname Varchar(64) NOT NULL,
     Email Varchar(50) NOT NULL,
+    InstitutionID uuid NOT NULL,
+    CONSTRAINT userinstitutionfkey FOREIGN KEY (InstitutionID)
+        REFERENCES public.Institution (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
     CreatedDateTime timestamp NOT NULL,
+    AdvertisementsRemaining DEC(1,0) DEFAULT(3),
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
@@ -79,13 +93,6 @@ CREATE TABLE public.AdvertisementType (
     ModifiedDateTime timestamp
 );
 
-CREATE TABLE public.Institution (
-    ID uuid PRIMARY KEY NOT NULL,
-    Name Varchar(50) NOT NULL,
-    CreatedDateTime timestamp NOT NULL,
-    IsDeleted Boolean DEFAULT(false),
-    ModifiedDateTime timestamp
-);
 
 
 CREATE TABLE public.Faculty (
@@ -313,6 +320,7 @@ CREATE OR REPLACE FUNCTION public.registeruser(
 	var_name character varying,
 	var_surname character varying,
 	var_email character varying,
+	var_institutionname character varying,
 	OUT res_created boolean,
 	OUT ret_username character varying,
 	OUT ret_user_id uuid,
@@ -322,10 +330,10 @@ CREATE OR REPLACE FUNCTION public.registeruser(
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
     userid uuid := uuid_generate_v4();
+    var_institutionid uuid;
 BEGIN
 	IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username) THEN
 		res_created := false;
@@ -338,14 +346,38 @@ BEGIN
 				ret_user_id := '00000000-0000-0000-0000-000000000000';
 				ret_error := 'This Email Already Exists!';
 					ELSE
-						INSERT INTO public.User(ID, Username, Password, Name, Surname, Email, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    					VALUES (userid, var_username, var_password, var_name, var_surname, var_email, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+                        IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institutionname AND i.isdeleted = false) THEN
+                           SELECT i.id
+                           INTO var_institutionid 
+                           FROM public.institution i  
+                           WHERE i.name = var_institutionname AND i.isdeleted = false;
+						INSERT INTO public.User(ID, Username, Password, Name, Surname, Email, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    					VALUES (userid, var_username, var_password, var_name, var_surname, var_email,var_institutionid, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     					res_created := true;
     					ret_username := var_username;
     					ret_user_id := userid;
 						ret_error := 'User Successfully Created!';
+                        END IF;
     				END IF;
 			END IF;
+END;
+$BODY$;
+
+/* ---- Get Institutions Function ---- */
+CREATE OR REPLACE FUNCTION public.getinstitutions(
+	)
+    RETURNS TABLE(modulecode character varying) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT i.name
+    FROM public.institution i
+    WHERE isdeleted = false;
 END;
 $BODY$;
 
@@ -1982,10 +2014,10 @@ $BODY$;
 
 
 /* ---- Populating user table with default users. ---- */
-SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com');
-SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za');
-SELECT public.registeruser('Blairzee', '!Blairzee', 'Blaire', 'Baldwin', 'Blaire24@gmail.com');
-SELECT public.registeruser('JohanStemmet', '!stemmet', 'Johan', 'Stemmet', 'manie.gilliland@gmail.com');
+SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com','University of Pretoria');
+SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za','University of Pretoria');
+SELECT public.registeruser('Blairzee', '!Blairzee', 'Blaire', 'Baldwin', 'Blaire24@gmail.com','University of Pretoria');
+SELECT public.registeruser('JohanStemmet', '!stemmet', 'Johan', 'Stemmet', 'manie.gilliland@gmail.com','University of Pretoria');
 
 /* ---- ACCOMODATION TYPES ---- */
 INSERT INTO public.AccomodationType(Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
@@ -2133,12 +2165,12 @@ VALUES ('PAR','Parking', 'The Property has parking.', CURRENT_TIMESTAMP,false,CU
 INSERT INTO public.Feature (Code, Name, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('PPE','Prepaid Electricity', 'The property works on perpaid electricity.', CURRENT_TIMESTAMP,false,CURRENT_TIMESTAMP);
 /* ---- USERS ---- */
-INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234567','Gerard','Botes','Gerard.Botes@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('7bb9d62d-c3fa-4e63-9f07-061f6226cebb','Jack','123456','Gerard','Botes','jack@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,CreatedDateTime,IsDeleted,ModifiedDateTime)
-VALUES ('711f58f8-f469-4a44-b83a-7f21d1f24918','James','123456','Gerard','Botes','james@gmail.com', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,InstitutionID,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7','Gerard','1234567','Gerard','Botes','Gerard.Botes@gmail.com', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,InstitutionID,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('7bb9d62d-c3fa-4e63-9f07-061f6226cebb','Jack','123456','Gerard','Botes','jack@gmail.com', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,InstitutionID,CreatedDateTime,IsDeleted,ModifiedDateTime)
+VALUES ('711f58f8-f469-4a44-b83a-7f21d1f24918','James','123456','Gerard','Botes','james@gmail.com', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 /* ---- ADVERTISEMENTS ---- */
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '382e4fbb-5b63-4a1a-b3ee-162e256e861b', '450','This is business strategy principles, contact now to secure this book which is in amazing condition', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);

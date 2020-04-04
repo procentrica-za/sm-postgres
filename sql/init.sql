@@ -385,22 +385,27 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.getuser(
 	var_userid uuid,
-OUT ret_varid uuid,
-OUT ret_username varchar(50),
-OUT ret_name varchar (50),
-OUT ret_surname varchar (50),
-OUT ret_email varchar (50),
-OUT ret_successget boolean)
+	OUT ret_varid uuid,
+	OUT ret_username character varying,
+	OUT ret_name character varying,
+	OUT ret_surname character varying,
+	OUT ret_email character varying,
+	OUT ret_institution character varying,
+	OUT ret_successget boolean)
+    RETURNS record
     LANGUAGE 'plpgsql'
+
     COST 100
-    VOLATILE
+    VOLATILE 
 AS $BODY$
 BEGIN
 IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid AND u.isdeleted = false) THEN
-	SELECT u.id, u.username, u.name, u.surname, u.email
-	INTO ret_varid, ret_username, ret_name, ret_surname, ret_email
+	SELECT u.id, u.username, u.name, u.surname, u.email, i.name
+	INTO ret_varid, ret_username, ret_name, ret_surname, ret_email, ret_institution
     FROM public.User u
-    WHERE var_userid = u.id AND isdeleted = false;
+    INNER JOIN public.Institution i 
+    ON u.institutionid = i.id
+    WHERE var_userid = u.id AND u.isdeleted = false;
 	ret_successget = true;
 	ELSE
         ret_varid = '00000000-0000-0000-0000-000000000000';
@@ -421,14 +426,17 @@ CREATE OR REPLACE FUNCTION public.updateuser(
 	var_name character varying,
 	var_surname character varying,
 	var_email character varying,
+	var_institutionname character varying,
 	OUT res_updated boolean,
 	OUT res_error character varying)
     RETURNS record
     LANGUAGE 'plpgsql'
+
     COST 100
-    VOLATILE
+    VOLATILE 
 AS $BODY$
 DECLARE
+ var_institutionid uuid;
 BEGIN
 IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id != var_userid) THEN
 	res_updated := false;
@@ -440,11 +448,17 @@ IF EXISTS (SELECT 1 FROM public.user u WHERE u.username = var_username AND u.id 
 			    res_updated := false;
 			    res_error := 'This User is deleted!';
 				    ELSE
+                     IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institutionname AND i.isdeleted = false) THEN
+                           SELECT i.id
+                           INTO var_institutionid 
+                           FROM public.institution i  
+                           WHERE i.name = var_institutionname AND i.isdeleted = false;
     				    UPDATE public.User
-   				 	    SET username = var_username, name = var_name, surname = var_surname, email = var_email, modifieddatetime = CURRENT_TIMESTAMP
+   				 	    SET username = var_username, name = var_name, surname = var_surname, email = var_email, institutionid= var_institutionid, modifieddatetime = CURRENT_TIMESTAMP
     				    WHERE var_userid = id;
     				    res_updated := true;
 					    res_error := 'User Successfully Updated';
+                        END IF;
 				    END IF;
                 END IF;
 		END IF;

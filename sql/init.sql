@@ -2056,6 +2056,42 @@ BEGIN
 END;
 $BODY$;
 
+/* ---------- Buyer dashboard function  --------- */
+CREATE OR REPLACE FUNCTION public.buyerdashboard(
+	var_userid uuid)
+    RETURNS TABLE(rating numeric) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT AVG(DISTINCT buyerrating) as "Buyer Rating" 
+    FROM public.Rating as r
+	WHERE r.isdeleted = false AND r.buyerrating != 0 AND r.buyerid = var_userid;
+
+END;
+$BODY$;
+
+/* ---------- Buyer dashboard function  --------- */
+CREATE OR REPLACE FUNCTION public.sellerdashboard(
+	var_userid uuid)
+    RETURNS TABLE(rating numeric) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT AVG(DISTINCT sellerrating) as "Seller Rating" 
+    FROM public.Rating as r
+	WHERE r.isdeleted = false AND r.sellerrating != 0 AND r.sellerid = var_userid;
+
+END;
+$BODY$;
+
 
 
 /* ---- Populating user table with default users. ---- */
@@ -2414,7 +2450,13 @@ VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', 'b08fda22-aa4f-4abc-a8ad-4edb062
 
 
 /* ---- INSERT RATING DATA ---- */
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, SellerRating, BuyerComments, SellerComments, CreatedDateTime, ModifiedDateTime)
+VALUES ('23c571a5-4004-4f98-ac65-d426e022f59a', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 4, 4,  'What a person to deal with, he paid in cash too', 'Lovely Guy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, SellerRating, SellerComments,  CreatedDateTime, ModifiedDateTime)
+VALUES ('efaa90bb-aa53-43ca-8ee2-3a5636579aee', '9d849400-2320-4133-948c-14241b7ee410', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 5,  'What a person to deal with he accepted cash too', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+/* ---- INSERT RATING DATA ---- */
 INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
-VALUES ('23c571a5-4004-4f98-ac65-d426e022f59a', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 5,  'What a person to deal with, he paid in cash too', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+VALUES ('c524ab86-1d2c-4f7c-a958-348ffa7f625f', '155ae020-1499-4e33-aaea-bbd343931cc6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 1,  'What a person to deal with, he paid in cash too', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+
 
 

@@ -555,10 +555,10 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_userid uuid,
-    var_isselling boolean,
+	var_isselling boolean,
 	var_advertisementtype character varying,
 	var_entityid uuid,
-	var_price float,
+	var_price double precision,
 	var_description character varying,
 	OUT res_advertisementposted boolean,
 	OUT ret_id uuid,
@@ -568,16 +568,24 @@ CREATE OR REPLACE FUNCTION public.addadvertisement(
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-	INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
-    res_advertisementposted := true;
-    ret_id := id;
-	ret_error := 'Advert Successfully Created!';
+    IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = false AND u.id = var_userid AND u.advertisementsremaining = 0) THEN
+	res_advertisementposted := false;
+	ret_id := '00000000-0000-0000-0000-000000000000';
+	ret_error := 'There are no advetisements remaining, please purchase more credits in order to post an advertisement';
+	    ELSE
+		INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    	VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+   		 res_advertisementposted := true;
+   		 ret_id := id;
+		 ret_error := 'Advert Successfully Created!';
+		UPDATE public.User u
+		SET advertisementsremaining = advertisementsremaining - 1
+		WHERE var_userid = u.id;
+	END IF;
 END;
 $BODY$;
 

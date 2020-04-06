@@ -2061,13 +2061,14 @@ CREATE OR REPLACE FUNCTION public.buyerdashboard(
 	var_userid uuid)
     RETURNS TABLE(rating numeric) 
     LANGUAGE 'plpgsql'
+
     COST 100
     VOLATILE 
     ROWS 1000
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT AVG(DISTINCT buyerrating) as "Buyer Rating" 
+	SELECT COALESCE (AVG(DISTINCT buyerrating),0) as "Buyer Rating" 
     FROM public.Rating as r
 	WHERE r.isdeleted = false AND r.buyerrating != 0 AND r.buyerid = var_userid;
 
@@ -2085,7 +2086,7 @@ CREATE OR REPLACE FUNCTION public.sellerdashboard(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT AVG(DISTINCT sellerrating) as "Seller Rating" 
+	SELECT COALESCE (AVG(DISTINCT sellerrating),0) as "Seller Rating" 
     FROM public.Rating as r
 	WHERE r.isdeleted = false AND r.sellerrating != 0 AND r.sellerid = var_userid;
 

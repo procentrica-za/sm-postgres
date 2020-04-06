@@ -468,6 +468,7 @@ $BODY$;
 /* ---- Update Password for user Function ---- */
 CREATE OR REPLACE FUNCTION public.updatepassword(
 	var_userid uuid,
+	var_oldpassword character varying,
 	var_password character varying,
 	OUT res_updated boolean,
 	OUT res_error character varying)
@@ -476,19 +477,22 @@ CREATE OR REPLACE FUNCTION public.updatepassword(
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
 BEGIN
 IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = true AND u.id = var_userid) THEN
 	res_updated := false;
 	res_error := 'This User is deleted!';
-    ELSE
+    ELSE IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = false AND u.id = var_userid AND u.password != var_oldpassword) THEN
+	         res_updated := false;
+	         res_error := 'Your current password is incorrect';
+	ElSE
         UPDATE public.User
    	    SET id = var_userid, password = var_password, modifieddatetime = CURRENT_TIMESTAMP 
         WHERE var_userid = id AND isdeleted = false;
         res_updated := true;
 	    res_error := 'Password successfully updated';
+		END IF;
     END IF;
 END;
 $BODY$;

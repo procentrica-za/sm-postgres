@@ -391,6 +391,7 @@ CREATE OR REPLACE FUNCTION public.getuser(
 	OUT ret_surname character varying,
 	OUT ret_email character varying,
 	OUT ret_institution character varying,
+    OUT ret_adsremaining character varying,
 	OUT ret_successget boolean)
     RETURNS record
     LANGUAGE 'plpgsql'
@@ -400,8 +401,8 @@ CREATE OR REPLACE FUNCTION public.getuser(
 AS $BODY$
 BEGIN
 IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid AND u.isdeleted = false) THEN
-	SELECT u.id, u.username, u.name, u.surname, u.email, i.name
-	INTO ret_varid, ret_username, ret_name, ret_surname, ret_email, ret_institution
+	SELECT u.id, u.username, u.name, u.surname, u.email, i.name, u.advertisementsremaining
+	INTO ret_varid, ret_username, ret_name, ret_surname, ret_email, ret_institution, ret_adsremaining
     FROM public.User u
     INNER JOIN public.Institution i 
     ON u.institutionid = i.id

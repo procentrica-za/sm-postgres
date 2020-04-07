@@ -391,6 +391,7 @@ CREATE OR REPLACE FUNCTION public.getuser(
 	OUT ret_surname character varying,
 	OUT ret_email character varying,
 	OUT ret_institution character varying,
+    OUT ret_adsremaining character varying,
 	OUT ret_successget boolean)
     RETURNS record
     LANGUAGE 'plpgsql'
@@ -400,8 +401,8 @@ CREATE OR REPLACE FUNCTION public.getuser(
 AS $BODY$
 BEGIN
 IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid AND u.isdeleted = false) THEN
-	SELECT u.id, u.username, u.name, u.surname, u.email, i.name
-	INTO ret_varid, ret_username, ret_name, ret_surname, ret_email, ret_institution
+	SELECT u.id, u.username, u.name, u.surname, u.email, i.name, u.advertisementsremaining
+	INTO ret_varid, ret_username, ret_name, ret_surname, ret_email, ret_institution, ret_adsremaining
     FROM public.User u
     INNER JOIN public.Institution i 
     ON u.institutionid = i.id
@@ -468,6 +469,7 @@ $BODY$;
 /* ---- Update Password for user Function ---- */
 CREATE OR REPLACE FUNCTION public.updatepassword(
 	var_userid uuid,
+	var_oldpassword character varying,
 	var_password character varying,
 	OUT res_updated boolean,
 	OUT res_error character varying)
@@ -476,19 +478,22 @@ CREATE OR REPLACE FUNCTION public.updatepassword(
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
 BEGIN
 IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = true AND u.id = var_userid) THEN
 	res_updated := false;
 	res_error := 'This User is deleted!';
-    ELSE
+    ELSE IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = false AND u.id = var_userid AND u.password != var_oldpassword) THEN
+	         res_updated := false;
+	         res_error := 'Your current password is incorrect';
+	ElSE
         UPDATE public.User
    	    SET id = var_userid, password = var_password, modifieddatetime = CURRENT_TIMESTAMP 
         WHERE var_userid = id AND isdeleted = false;
         res_updated := true;
 	    res_error := 'Password successfully updated';
+		END IF;
     END IF;
 END;
 $BODY$;
@@ -551,10 +556,10 @@ $BODY$;
 
 CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_userid uuid,
-    var_isselling boolean,
+	var_isselling boolean,
 	var_advertisementtype character varying,
 	var_entityid uuid,
-	var_price float,
+	var_price double precision,
 	var_description character varying,
 	OUT res_advertisementposted boolean,
 	OUT ret_id uuid,
@@ -564,16 +569,24 @@ CREATE OR REPLACE FUNCTION public.addadvertisement(
 
     COST 100
     VOLATILE 
-    
 AS $BODY$
 DECLARE
     id uuid := uuid_generate_v4();
 BEGIN
-	INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
-    res_advertisementposted := true;
-    ret_id := id;
-	ret_error := 'Advert Successfully Created!';
+    IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = false AND u.id = var_userid AND u.advertisementsremaining = 0) THEN
+	res_advertisementposted := false;
+	ret_id := '00000000-0000-0000-0000-000000000000';
+	ret_error := 'There are no advetisements remaining, please purchase more credits in order to post an advertisement';
+	    ELSE
+		INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    	VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+   		 res_advertisementposted := true;
+   		 ret_id := id;
+		 ret_error := 'Advert Successfully Created!';
+		UPDATE public.User u
+		SET advertisementsremaining = advertisementsremaining - 1
+		WHERE var_userid = u.id;
+	END IF;
 END;
 $BODY$;
 
@@ -2044,6 +2057,43 @@ BEGIN
 END;
 $BODY$;
 
+/* ---------- Buyer dashboard function  --------- */
+CREATE OR REPLACE FUNCTION public.buyerdashboard(
+	var_userid uuid)
+    RETURNS TABLE(rating numeric) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT COALESCE (AVG(DISTINCT buyerrating),0) as "Buyer Rating" 
+    FROM public.Rating as r
+	WHERE r.isdeleted = false AND r.buyerrating != 0 AND r.buyerid = var_userid;
+
+END;
+$BODY$;
+
+/* ---------- Buyer dashboard function  --------- */
+CREATE OR REPLACE FUNCTION public.sellerdashboard(
+	var_userid uuid)
+    RETURNS TABLE(rating numeric) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE 
+    ROWS 1000
+AS $BODY$
+BEGIN
+	RETURN QUERY
+	SELECT COALESCE (AVG(DISTINCT sellerrating),0) as "Seller Rating" 
+    FROM public.Rating as r
+	WHERE r.isdeleted = false AND r.sellerrating != 0 AND r.sellerid = var_userid;
+
+END;
+$BODY$;
+
 
 
 /* ---- Populating user table with default users. ---- */
@@ -2402,7 +2452,13 @@ VALUES ('2c75f2cf-182d-4d92-84a8-9013381de9c2', 'b08fda22-aa4f-4abc-a8ad-4edb062
 
 
 /* ---- INSERT RATING DATA ---- */
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, SellerRating, BuyerComments, SellerComments, CreatedDateTime, ModifiedDateTime)
+VALUES ('23c571a5-4004-4f98-ac65-d426e022f59a', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 4, 4,  'What a person to deal with, he paid in cash too', 'Lovely Guy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, SellerRating, SellerComments,  CreatedDateTime, ModifiedDateTime)
+VALUES ('efaa90bb-aa53-43ca-8ee2-3a5636579aee', '9d849400-2320-4133-948c-14241b7ee410', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 5,  'What a person to deal with he accepted cash too', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+/* ---- INSERT RATING DATA ---- */
 INSERT INTO public.Rating(ID, AdvertisementID , SellerID, BuyerID, BuyerRating, BuyerComments,  CreatedDateTime, ModifiedDateTime)
-VALUES ('23c571a5-4004-4f98-ac65-d426e022f59a', 'd17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', 5,  'What a person to deal with, he paid in cash too', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+VALUES ('c524ab86-1d2c-4f7c-a958-348ffa7f625f', '155ae020-1499-4e33-aaea-bbd343931cc6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', 1,  'What a person to deal with, he paid in cash too', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP );
+
 
 

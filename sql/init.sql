@@ -57,6 +57,10 @@ CREATE TABLE public.Advertisement (
     EntityID uuid NOT NULL,
     Price DEC(15,2) NOT NULL,
     Description Varchar(255) NOT NULL,
+    InstitutionID uuid NOT NULL,
+    CONSTRAINT advertisementinstitutionfkey FOREIGN KEY (InstitutionID)
+        REFERENCES public.Institution (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
     CreatedDateTime timestamp NOT NULL,
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
@@ -527,27 +531,30 @@ $BODY$;
 /* ---- Login User Function ---- */
 
 CREATE OR REPLACE FUNCTION public.loginuser(
-	var_username varchar(50),
-	var_password varchar(50),
-    OUT ret_userid uuid,
-    OUT ret_username varchar(50),
-    OUT ret_successlogin boolean
-)
+	var_username character varying,
+	var_password character varying,
+	OUT ret_userid uuid,
+	OUT ret_username character varying,
+	OUT ret_successlogin boolean,
+	OUT ret_institution character varying)
+    RETURNS record
     LANGUAGE 'plpgsql'
+
     COST 100
-    VOLATILE
+    VOLATILE 
 AS $BODY$
 BEGIN
 IF EXISTS (SELECT 1 FROM public.User u WHERE u.username = var_username AND u.password = var_password) THEN
-    SELECT u.id, u.username
-    INTO ret_userid, ret_username 
-    FROM public.User u 
+    SELECT u.id, u.username, i.name
+    INTO ret_userid, ret_username, ret_institution
+    FROM public.User u, public.Institution i
     WHERE  u.username = var_username AND u.password = var_password; 
     ret_successlogin = true;
     ELSE
         ret_userid = '00000000-0000-0000-0000-000000000000';
         ret_username = var_username;
-        ret_successlogin = false; 
+        ret_successlogin = false;
+		ret_institution = '00000000-0000-0000-0000-000000000000';
     END IF;
 END;
 $BODY$;
@@ -561,6 +568,7 @@ CREATE OR REPLACE FUNCTION public.addadvertisement(
 	var_entityid uuid,
 	var_price double precision,
 	var_description character varying,
+	var_institution character varying,
 	OUT res_advertisementposted boolean,
 	OUT ret_id uuid,
 	OUT ret_error character varying)
@@ -571,21 +579,23 @@ CREATE OR REPLACE FUNCTION public.addadvertisement(
     VOLATILE 
 AS $BODY$
 DECLARE
+    var_institutionid uuid;
     id uuid := uuid_generate_v4();
 BEGIN
-    IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = false AND u.id = var_userid AND u.advertisementsremaining = 0) THEN
-	res_advertisementposted := false;
-	ret_id := '00000000-0000-0000-0000-000000000000';
-	ret_error := 'There are no advetisements remaining, please purchase more credits in order to post an advertisement';
-	    ELSE
-		INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-    	VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
-   		 res_advertisementposted := true;
-   		 ret_id := id;
-		 ret_error := 'Advert Successfully Created!';
-		UPDATE public.User u
-		SET advertisementsremaining = advertisementsremaining - 1
-		WHERE var_userid = u.id;
+    IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institution AND i.isdeleted = false) THEN
+        SELECT i.id
+        INTO var_institutionid 
+        FROM public.institution i  
+        WHERE i.name = var_institution AND i.isdeleted = false;
+	INSERT INTO public.Advertisement(ID, UserID, IsSelling, AdvertisementType, EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    VALUES (id, var_userid,var_isselling, var_advertisementtype, var_entityid, var_price, var_description, var_institutionid, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+        res_advertisementposted := true;
+        ret_id := id;
+        ret_error := 'Advert Successfully Created!';
+    ELSE 
+        res_advertisementposted := false;
+        ret_id := '00000000-0000-0000-0000-000000000000';
+        ret_error := 'Advert could not be added due to an internal error!';
 	END IF;
 END;
 $BODY$;
@@ -857,16 +867,16 @@ $BODY$;
 /* ---- Get Textbook Advertisements Ammount dictated by varibale sent to the function. ---- */
 
 CREATE OR REPLACE FUNCTION public.gettextbookadvertisements(
+	var_institution character varying,
 	var_limit numeric,
 	var_isselling boolean,
-    var_maxprice numeric,
-    var_modulecode character varying,
+	var_maxprice numeric,
+	var_modulecode character varying,
 	var_name character varying,
 	var_edition character varying,
 	var_quality character varying,
-	var_author character varying
-	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying) 
+	var_author character varying)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying, institutionname character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -875,13 +885,15 @@ CREATE OR REPLACE FUNCTION public.gettextbookadvertisements(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode, i.name
     FROM public.Advertisement as a
 	INNER JOIN public.Textbook as t 
 	ON a.entityid = t.id
 	INNER JOIN public.Module as m
 	ON m.id = t.moduleid AND m.isdeleted = false
-	WHERE var_maxprice >= a.price AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.name LIKE var_name AND t.edition LIKE var_edition AND t.quality LIKE var_quality AND t.author LIKE var_author AND m.ModuleCode LIKE var_modulecode
+	INNER JOIN public.Institution as i
+	ON i.id = a.InstitutionID
+	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.name LIKE var_name AND t.edition LIKE var_edition AND t.quality LIKE var_quality AND t.author LIKE var_author AND m.ModuleCode LIKE var_modulecode
 	LIMIT var_limit;
 END;
 $BODY$;
@@ -890,6 +902,7 @@ $BODY$;
 
 
 CREATE OR REPLACE FUNCTION public.gettutoradvertisements(
+    var_institution character varying,
 	var_limit numeric,
     var_isselling boolean,
     var_maxprice numeric,
@@ -900,7 +913,7 @@ CREATE OR REPLACE FUNCTION public.gettutoradvertisements(
 	var_terms character varying,
     var_modulecode character varying
 	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying, institutionname character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -910,13 +923,15 @@ CREATE OR REPLACE FUNCTION public.gettutoradvertisements(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode, i.name
     FROM public.Advertisement as a
 	INNER JOIN public.Tutor as t 
 	ON a.entityid = t.id
 	INNER JOIN public.Module as m
 	ON m.id = t.moduleid AND m.isdeleted = false
-	WHERE var_maxprice >= a.price AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.subject LIKE var_subject AND t.yearcompleted LIKE var_yearCompleted AND t.venue LIKE var_venue AND CAST(t.notesincluded AS character varying) LIKE var_notesIncluded AND t.terms LIKE var_terms AND m.ModuleCode LIKE var_modulecode
+    INNER JOIN public.Institution as i
+	ON i.id = a.InstitutionID
+	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.subject LIKE var_subject AND t.yearcompleted LIKE var_yearCompleted AND t.venue LIKE var_venue AND CAST(t.notesincluded AS character varying) LIKE var_notesIncluded AND t.terms LIKE var_terms AND m.ModuleCode LIKE var_modulecode
 	LIMIT var_limit;
 END;
 $BODY$;
@@ -927,12 +942,13 @@ $BODY$;
 
 
 CREATE OR REPLACE FUNCTION public.getnoteadvertisements(
+    var_institution character varying,
     var_limit numeric,
     var_isselling boolean,
     var_maxprice numeric,
     var_modulecode character varying
 	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying, institutionname character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -942,13 +958,15 @@ CREATE OR REPLACE FUNCTION public.getnoteadvertisements(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode, i.name
     FROM public.Advertisement as a
 	INNER JOIN public.Notes as n 
 	ON a.entityid = n.id
 	INNER JOIN public.Module as m
 	ON m.id = n.moduleid AND m.isdeleted = false
-	WHERE var_maxprice >= a.price AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND m.ModuleCode LIKE var_modulecode
+    INNER JOIN public.Institution as i
+	ON i.id = a.InstitutionID
+	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND m.ModuleCode LIKE var_modulecode
 	LIMIT var_limit;
 END;
 $BODY$;
@@ -956,15 +974,15 @@ $BODY$;
 /* ---- Get Accomodation Advertisements Ammount dictated by varibale sent to the function. ---- */
 
 CREATE OR REPLACE FUNCTION public.getaccomodationadvertisements(
+    var_institutionname character varying,
     var_limit numeric,
     var_isselling boolean,
     var_maxprice numeric,
     var_accomodationcode character varying,
     var_location character varying,
-    var_distancetocampus numeric,
-    var_institutionname character varying
+    var_distancetocampus numeric
 	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institution character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institutionname character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -992,7 +1010,7 @@ CREATE OR REPLACE FUNCTION public.gettextbookadvertisementsbyuserid(
 	var_userid uuid,
 	var_limit numeric,
 	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying, institutionname character varying ) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1001,12 +1019,14 @@ CREATE OR REPLACE FUNCTION public.gettextbookadvertisementsbyuserid(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-    SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode
+    SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode, i.name
     FROM public.Advertisement as a
 	INNER JOIN public.Textbook as t 
 	ON a.entityid = t.id
 	INNER JOIN public.Module as m
 	ON m.id = t.moduleid AND m.isdeleted = false
+    INNER JOIN public.Institution as i
+	ON i.id = a.InstitutionID
 	WHERE var_userid = a.userid AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false 
 	LIMIT var_limit;
 END;
@@ -1042,7 +1062,7 @@ CREATE OR REPLACE FUNCTION public.gettutoradvertisementsbyuserid(
 	var_userid uuid,
 	var_limit numeric,
 	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying, institutionname character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1051,12 +1071,14 @@ CREATE OR REPLACE FUNCTION public.gettutoradvertisementsbyuserid(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode, i.name
     FROM public.Advertisement as a
 	INNER JOIN public.Tutor as t 
 	ON a.entityid = t.id
 	INNER JOIN public.Module as m
 	ON m.id = t.moduleid AND m.isdeleted = false
+    INNER JOIN public.Institution as i
+	ON i.id = a.InstitutionID
 	WHERE var_userid = a.userid AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
 	LIMIT var_limit;
 END;
@@ -1067,7 +1089,7 @@ CREATE OR REPLACE FUNCTION public.getnoteadvertisementsbyuserid(
 	var_userid uuid,
 	var_limit numeric,
 	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying, institutionname character varying) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1076,12 +1098,14 @@ CREATE OR REPLACE FUNCTION public.getnoteadvertisementsbyuserid(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode, i.name
     FROM public.Advertisement as a
 	INNER JOIN public.Notes as n 
 	ON a.entityid = n.id
 	INNER JOIN public.Module as m
 	ON m.id = n.moduleid AND m.isdeleted = false
+    INNER JOIN public.Institution as i
+	ON i.id = a.InstitutionID
 	WHERE var_userid = a.userid AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
 	LIMIT var_limit;
 END;
@@ -2255,52 +2279,52 @@ VALUES ('7bb9d62d-c3fa-4e63-9f07-061f6226cebb','Jack','123456','Gerard','Botes',
 INSERT INTO public.User(ID,Username,Password,Name,Surname,Email,InstitutionID,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('711f58f8-f469-4a44-b83a-7f21d1f24918','James','123456','Gerard','Botes','james@gmail.com', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 /* ---- ADVERTISEMENTS ---- */
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '382e4fbb-5b63-4a1a-b3ee-162e256e861b', '450','This is business strategy principles, contact now to secure this book which is in amazing condition', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('9d849400-2320-4133-948c-14241b7ee410', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '64a4c6c0-bf8e-4728-a650-579003bc6857', '300','This is the calculus follow up course textbook! Contact me ASAP, priced to go', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('155ae020-1499-4e33-aaea-bbd343931cc6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '7dda5091-4a6e-42dd-b6e1-7ccc8be7e5cd', '500','Business strategy advanced is the subject to do! get this amazing textbook now.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('73e8c510-34f3-4fc0-94de-d05d227e1f56', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '47db44d5-e0ae-4853-93e3-b7c85ff5b65c', '200','Business implementation! Looking for a fast sell! Selling on Campus! Contact me now!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('a6feb6c0-9349-41f7-ac8e-96e0e0c28148', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','Great condition, honest sale. Message me for more details. Only cash accepted', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('d17e784f-f5f7-4bc8-ad34-3170bc735fc7', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '382e4fbb-5b63-4a1a-b3ee-162e256e861b', '450','This is business strategy principles, contact now to secure this book which is in amazing condition', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('9d849400-2320-4133-948c-14241b7ee410', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '64a4c6c0-bf8e-4728-a650-579003bc6857', '300','This is the calculus follow up course textbook! Contact me ASAP, priced to go', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('155ae020-1499-4e33-aaea-bbd343931cc6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TXB', '7dda5091-4a6e-42dd-b6e1-7ccc8be7e5cd', '500','Business strategy advanced is the subject to do! get this amazing textbook now.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('73e8c510-34f3-4fc0-94de-d05d227e1f56', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', '47db44d5-e0ae-4853-93e3-b7c85ff5b65c', '200','Business implementation! Looking for a fast sell! Selling on Campus! Contact me now!', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('a6feb6c0-9349-41f7-ac8e-96e0e0c28148', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','Great condition, honest sale. Message me for more details. Only cash accepted', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 
 
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','Business management will be explained and simplified! contact me for details.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('65fffff4-c5a4-4969-b725-7bbd483332df', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '07783074-3f1d-4ae3-b27b-c075f34aacf9', '400','I will simplify this module and help calm the nerves. Notes are included too!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('617cca47-49bb-406f-b5e9-adcdde12e5d4', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', 'c184c2b9-4039-4b6f-964c-d95b0b9a358c', '250','Within the comfort of your home, you will learn all you need to about this module!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('e99605a1-53bb-41f2-81cc-3c8c670f0da7', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', '7e0e437c-aa29-488f-9202-36d281e70c40', '450','Worried you will now be able to pass ? give me a shout, and we will work through it.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', 'ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', '150','I was top of my class, we can make that happen for you too, together. Contact me now!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','Business management will be explained and simplified! contact me for details.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('65fffff4-c5a4-4969-b725-7bbd483332df', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '07783074-3f1d-4ae3-b27b-c075f34aacf9', '400','I will simplify this module and help calm the nerves. Notes are included too!', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('617cca47-49bb-406f-b5e9-adcdde12e5d4', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', 'c184c2b9-4039-4b6f-964c-d95b0b9a358c', '250','Within the comfort of your home, you will learn all you need to about this module!', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('e99605a1-53bb-41f2-81cc-3c8c670f0da7', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', '7e0e437c-aa29-488f-9202-36d281e70c40', '450','Worried you will now be able to pass ? give me a shout, and we will work through it.', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', 'ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', '150','I was top of my class, we can make that happen for you too, together. Contact me now!', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('81dc2379-aeb9-4279-865b-bdb46edc5db5', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','Cozy Hatfield accomodation, right by the gautrain.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('4dbe73b4-e811-4a5e-91e0-331d14942067', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', 'd4b1ef8d-cac8-4793-96b9-51f1024affc7', '7600','This Brooklyn Commune will make your life easy, on the doorstep on the university.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('221cbdbc-9aa4-410b-96a7-26f07dd1ca82', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '845f4a14-617b-4010-9dc4-e9cd84f47913', '5000','This house in the CBD of pretoria will have more than enough room for you and your friends! Drinking is allowed.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d8203552-bf56-4228-9864-cefc3dc957e6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '8bf04861-4b06-4ea5-a0ca-63cc839c3afa', '2750','This apartment in the CBD is very cost effective and is safe', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '6300','Situated in the heart of Hatfield, UP is a stone throw away.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('81dc2379-aeb9-4279-865b-bdb46edc5db5', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','Cozy Hatfield accomodation, right by the gautrain.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('4dbe73b4-e811-4a5e-91e0-331d14942067', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', 'd4b1ef8d-cac8-4793-96b9-51f1024affc7', '7600','This Brooklyn Commune will make your life easy, on the doorstep on the university.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('221cbdbc-9aa4-410b-96a7-26f07dd1ca82', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '845f4a14-617b-4010-9dc4-e9cd84f47913', '5000','This house in the CBD of pretoria will have more than enough room for you and your friends! Drinking is allowed.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('d8203552-bf56-4228-9864-cefc3dc957e6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '8bf04861-4b06-4ea5-a0ca-63cc839c3afa', '2750','This apartment in the CBD is very cost effective and is safe', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '6300','Situated in the heart of Hatfield, UP is a stone throw away.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','These First year OBS notes are all you will need!', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','These First year OBS notes are all you will need!', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d3b01bb0-e7b0-4a28-a2af-efda603c78db', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '150','Selling my amazing notes', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('3f012de7-6e81-429c-9467-e8f6b7bceb44', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '100','Selling these notes at a very fair price! My notes are digital so they can be emailed to you', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('ef3c2429-8a0b-4af7-bc3f-ce8018c475d5', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '75','I made these notes religiously, and aced every paper.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
-INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('d50f09da-eeea-4732-a600-479f3ea67477', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '250','These notes are guaranteed to make you pass', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('d3b01bb0-e7b0-4a28-a2af-efda603c78db', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '150','Selling my amazing notes', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('3f012de7-6e81-429c-9467-e8f6b7bceb44', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '100','Selling these notes at a very fair price! My notes are digital so they can be emailed to you', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('ef3c2429-8a0b-4af7-bc3f-ce8018c475d5', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '75','I made these notes religiously, and aced every paper.', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('d50f09da-eeea-4732-a600-479f3ea67477', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '250','These notes are guaranteed to make you pass', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 
 

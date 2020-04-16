@@ -418,6 +418,8 @@ IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid AND u.isdeleted =
 		ret_name = 'none';
 		ret_surname = 'none';
 		ret_email = 'none';
+        ret_institution = 'none';
+        ret_adsremaining = 'none';
         ret_successget = false; 
     END IF;
 END;

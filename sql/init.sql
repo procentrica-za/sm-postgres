@@ -237,14 +237,7 @@ CREATE TABLE public.Event (
     ModifiedDateTime timestamp
 );
 
-CREATE TABLE public.ForgetPassword (
-    ID uuid PRIMARY KEY NOT NULL,
-    UserID uuid NOT NULL,
-    VerificationID uuid NOT NULL,
-    CreatedDateTime timestamp NOT NULL,
-    IsDeleted Boolean DEFAULT(false),
-    ModifiedDateTime timestamp
-);
+
 
 /* ---- Create tables for Messaging ---- */
 CREATE TABLE public.Chat (
@@ -418,6 +411,8 @@ IF EXISTS (SELECT 1 FROM public.User u WHERE u.id = var_userid AND u.isdeleted =
 		ret_name = 'none';
 		ret_surname = 'none';
 		ret_email = 'none';
+        ret_institution = 'none';
+        ret_adsremaining = 'none';
         ret_successget = false; 
     END IF;
 END;
@@ -609,7 +604,12 @@ CREATE OR REPLACE FUNCTION public.addtextbook(
 	var_quality character varying,
 	var_author character varying,
 	OUT ret_success boolean,
-	OUT ret_textbookid uuid)
+	OUT ret_textbookid uuid,
+    OUT ret_modulecode character varying,
+    OUT ret_name character varying,
+    OUT ret_edition character varying,
+    OUT ret_quality character varying,
+    OUT ret_author character varying)
     RETURNS record
     LANGUAGE 'plpgsql'
 
@@ -630,9 +630,19 @@ IF EXISTS (SELECT 1 FROM public.Module m WHERE m.modulecode = var_modulecode AND
     	VALUES (id, var_moduleid, var_name, var_edition, var_quality, var_author, CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
 		ret_success = true;
 		ret_textbookid = id;
+        ret_modulecode = var_modulecode;
+        ret_name = var_name;
+        ret_edition = var_edition;
+        ret_quality = var_quality;
+        ret_author = var_author;
 	ELSE
 		ret_success = false;
 		ret_textbookid = '00000000-0000-0000-0000-000000000000';
+        ret_modulecode = 'none';
+        ret_name = 'none';
+        ret_edition = 'none';
+        ret_quality = 'none';
+        ret_author = 'none';
 	END IF;
 END;
 $BODY$;
@@ -1446,7 +1456,7 @@ DECLARE
 test_password character varying = array_to_string(ARRAY(SELECT chr((65 + round(random() * 25)) :: integer) 
 FROM generate_series(1,8)), '');
 BEGIN
-IF EXISTS (SELECT 1 FROM public.User u WHERE u.email = var_email) THEN 
+IF EXISTS (SELECT 1 FROM public.User u WHERE u.email = var_email AND u.isdeleted = false) THEN 
  UPDATE public.User
  SET password = test_password, modifieddatetime = CURRENT_TIMESTAMP
  WHERE var_email = email;

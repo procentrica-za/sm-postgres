@@ -1951,7 +1951,7 @@ CREATE OR REPLACE FUNCTION public.rateseller(
     VOLATILE 
 AS $BODY$
 BEGIN
-	IF EXISTS (SELECT 1 FROM public.rating r WHERE r.isdeleted = true AND r.id = var_ratingid) THEN
+	IF EXISTS (SELECT 1 FROM public.rating r WHERE r.sellerrating is not null AND r.id = var_ratingid AND r.sellercomments is not null) THEN
 	ret_rated := false;
     ELSE
         UPDATE public.Rating

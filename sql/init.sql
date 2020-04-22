@@ -41,10 +41,26 @@ CREATE TABLE public.User (
         REFERENCES public.Institution (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     CreatedDateTime timestamp NOT NULL,
-    AdvertisementsRemaining DEC(1,0) DEFAULT(3),
+    AdvertisementsRemaining DEC(1,0) DEFAULT(0),
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
+CREATE TABLE public.UserValidation (
+    ID uuid PRIMARY KEY NOT NULL,
+    UserID uuid NOT NULL,
+    CONSTRAINT uservalidationuserfkey FOREIGN KEY (UserID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    PhoneNumber Varchar(15) NOT NULL,
+    ValidationStatus Varchar(50) DEFAULT('OTP Sent'),
+    OTP Varchar(10) NOT NULL,
+    SentDate timestamp NOT NULL,
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
 
 CREATE TABLE public.Advertisement (
     ID uuid PRIMARY KEY NOT NULL,
@@ -2128,6 +2144,51 @@ BEGIN
 END;
 $BODY$;
 
+CREATE OR REPLACE FUNCTION public.requestotp(
+	var_userid uuid,
+	var_phonenumber character varying,
+	OUT ret_sent boolean,
+	OUT ret_message character varying,
+	OUT ret_phonenumber character varying,
+	OUT ret_otp character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+    generated_otp double precision = array_to_string(ARRAY(SELECT chr((48 + round(random() * 9)) :: integer) 
+FROM generate_series(1,5)), '');
+BEGIN
+	IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.id = var_userid AND u.validationstatus = 'OTP Sent' AND u.phonenumber = var_phonenumber) THEN
+		ret_sent := false;
+		ret_message := 'An OTP has already been sent to this number. Try the resend OTP option if you did not recieve an OTP.';
+        ret_phonenumber := '0';
+        ret_otp := 'None';
+			ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.id = var_userid AND u.validationstatus = 'OTP Validated') THEN
+				ret_sent := false;
+		        ret_message := 'An OTP has already been validated by this number. Try the resend OTP option if you did not recieve an OTP.';
+                ret_phonenumber := '0';
+                ret_otp := 'None';
+					ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.phonenumber = var_phonenumber) THEN
+							ret_sent := false;
+		       			    ret_message := 'This number has already been used to validate an account';
+               			    ret_phonenumber := '0';
+                			ret_otp := 'None';
+					ELSE
+						INSERT INTO public.UserValidation(ID, UserID, PhoneNumber, OTP, SentDate, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    					VALUES (id, var_userid, var_phonenumber, generated_otp ,CURRENT_TIMESTAMP , CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    					ret_sent := true;
+		                ret_message := 'An OTP has successfully been sucessfully sent to your phone';
+                        ret_phonenumber := var_phonenumber;
+                        ret_otp := generated_otp;
+    				END IF;
+				END IF;
+			END IF;
+END;
+$BODY$;
 
 
 /* ---- Populating user table with default users. ---- */

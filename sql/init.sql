@@ -2159,7 +2159,7 @@ CREATE OR REPLACE FUNCTION public.requestotp(
 	OUT ret_message character varying,
 	OUT ret_phonenumber character varying,
 	OUT ret_otp character varying)
-    RETURNS record
+    RETURNS record 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -2189,7 +2189,7 @@ BEGIN
 						INSERT INTO public.UserValidation(ID, UserID, PhoneNumber, OTP, SentDate, CreatedDateTime, IsDeleted, ModifiedDateTime)
     					VALUES (id, var_userid, var_phonenumber, generated_otp ,CURRENT_TIMESTAMP , CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     					ret_sent := true;
-		                ret_message := 'An OTP has successfully been sucessfully sent to your phone';
+		                ret_message := 'An OTP has successfully been sent to your phone!';
                         ret_phonenumber := var_phonenumber;
                         ret_otp := generated_otp;
     				END IF;
@@ -2286,7 +2286,7 @@ BEGIN
 						INSERT INTO public.UserValidation(ID, UserID, PhoneNumber, OTP, SentDate, CreatedDateTime, IsDeleted, ModifiedDateTime)
     					VALUES (id, var_userid, var_phonenumber, generated_otp ,CURRENT_TIMESTAMP , CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
     					ret_sent := true;
-		                ret_message := 'A new OTP has successfully been sucessfully sent to your phone';
+		                ret_message := 'A new OTP has successfully been sent to your phone!';
                         ret_phonenumber := var_phonenumber;
                         ret_otp := generated_otp;
     				END IF;

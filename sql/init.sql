@@ -2294,6 +2294,24 @@ BEGIN
 END;
 $BODY$;
 
+CREATE OR REPLACE FUNCTION public.verifieduser(
+	var_userid uuid,
+	OUT ret_isverified boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+IF EXISTS (SELECT 1 FROM public.UserValidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Validated') THEN
+    ret_isverified = true;
+    ELSE
+        ret_isverified = false;
+    END IF;
+END;
+$BODY$;
+
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com','University of Pretoria');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za','University of Pretoria');

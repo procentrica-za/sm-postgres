@@ -2173,12 +2173,12 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Sent' AND u.phonenumber = var_phonenumber) THEN
 		ret_sent := false;
 		ret_message := 'An OTP has already been sent to this number. Try the resend OTP option if you did not recieve an OTP.';
-        ret_phonenumber := '0';
+        ret_phonenumber := '000';
         ret_otp := 'None';
 			ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Validated') THEN
 				ret_sent := false;
 		        ret_message := 'An OTP has already been validated by this number. Try the resend OTP option if you did not recieve an OTP.';
-                ret_phonenumber := '0';
+                ret_phonenumber := '00';
                 ret_otp := 'None';
 					ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.phonenumber = var_phonenumber) THEN
 							ret_sent := false;
@@ -2272,12 +2272,12 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Expired') THEN
 		ret_sent := false;
 		ret_message := 'An OTP has already been sent again. Please wait a few minutes as a delay can sometimes occur.';
-        ret_phonenumber := '0';
+        ret_phonenumber := '00000';
         ret_otp := 'None';
 			ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.phonenumber = var_phonenumber AND u.validationstatus = 'OTP Validated') THEN
 				ret_sent := false;
 		        ret_message := 'Your account has already been verified!';
-                ret_phonenumber := '0';
+                ret_phonenumber := '0000';
                 ret_otp := 'None';
 					ELSE
 						UPDATE public.UserValidation

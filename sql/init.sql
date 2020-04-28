@@ -41,10 +41,26 @@ CREATE TABLE public.User (
         REFERENCES public.Institution (ID) MATCH SIMPLE
         ON UPDATE NO ACTION ON DELETE NO ACTION,
     CreatedDateTime timestamp NOT NULL,
-    AdvertisementsRemaining DEC(1,0) DEFAULT(3),
+    AdvertisementsRemaining DEC(5,0) DEFAULT(0),
     IsDeleted Boolean DEFAULT(false),
     ModifiedDateTime timestamp
 );
+
+CREATE TABLE public.UserValidation (
+    ID uuid PRIMARY KEY NOT NULL,
+    UserID uuid NOT NULL,
+    CONSTRAINT uservalidationuserfkey FOREIGN KEY (UserID)
+        REFERENCES public.User (ID) MATCH SIMPLE
+        ON UPDATE NO ACTION ON DELETE NO ACTION,
+    PhoneNumber Varchar(15) NOT NULL,
+    ValidationStatus Varchar(50) DEFAULT('OTP Sent'),
+    OTP Varchar(10) NOT NULL,
+    SentDate timestamp NOT NULL,
+    CreatedDateTime timestamp NOT NULL,
+    IsDeleted Boolean DEFAULT(false),
+    ModifiedDateTime timestamp
+);
+
 
 CREATE TABLE public.Advertisement (
     ID uuid PRIMARY KEY NOT NULL,
@@ -577,7 +593,11 @@ DECLARE
     var_institutionid uuid;
     id uuid := uuid_generate_v4();
 BEGIN
-    IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institution AND i.isdeleted = false) THEN
+    IF EXISTS (SELECT 1 FROM public.user u WHERE u.isdeleted = false AND u.id = var_userid AND u.advertisementsremaining = 0) THEN
+	res_advertisementposted := false;
+	ret_id := '00000000-0000-0000-0000-000000000000';
+	ret_error := 'There are no advetisements remaining, please purchase more credits in order to post an advertisement';
+    ELSE IF EXISTS (SELECT 1 FROM public.Institution i WHERE i.name = var_institution AND i.isdeleted = false) THEN
         SELECT i.id
         INTO var_institutionid 
         FROM public.institution i  
@@ -587,11 +607,15 @@ BEGIN
         res_advertisementposted := true;
         ret_id := id;
         ret_error := 'Advert Successfully Created!';
+        UPDATE public.User u
+		SET advertisementsremaining = advertisementsremaining - 1
+		WHERE var_userid = u.id;
     ELSE 
         res_advertisementposted := false;
         ret_id := '00000000-0000-0000-0000-000000000000';
         ret_error := 'Advert could not be added due to an internal error!';
-	END IF;
+	    END IF;
+    END IF;
 END;
 $BODY$;
 
@@ -2128,7 +2152,165 @@ BEGIN
 END;
 $BODY$;
 
+CREATE OR REPLACE FUNCTION public.requestotp(
+	var_userid uuid,
+	var_phonenumber character varying,
+	OUT ret_sent boolean,
+	OUT ret_message character varying,
+	OUT ret_phonenumber character varying,
+	OUT ret_otp character varying)
+    RETURNS record 
+    LANGUAGE 'plpgsql'
 
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+    generated_otp double precision = array_to_string(ARRAY(SELECT chr((48 + round(random() * 9)) :: integer) 
+FROM generate_series(1,5)), '');
+BEGIN
+	IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Sent' AND u.phonenumber = var_phonenumber) THEN
+		ret_sent := false;
+		ret_message := 'An OTP has already been sent to this number. Try the resend OTP option if you did not recieve an OTP.';
+        ret_phonenumber := '000';
+        ret_otp := 'None';
+			ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Validated') THEN
+				ret_sent := false;
+		        ret_message := 'An OTP has already been validated by this number. Try the resend OTP option if you did not recieve an OTP.';
+                ret_phonenumber := '00';
+                ret_otp := 'None';
+					ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.phonenumber = var_phonenumber) THEN
+							ret_sent := false;
+		       			    ret_message := 'This number has already been used to validate an account';
+               			    ret_phonenumber := '0';
+                			ret_otp := 'None';
+					ELSE
+						INSERT INTO public.UserValidation(ID, UserID, PhoneNumber, OTP, SentDate, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    					VALUES (id, var_userid, var_phonenumber, generated_otp ,CURRENT_TIMESTAMP , CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    					ret_sent := true;
+		                ret_message := 'An OTP has successfully been sent to your phone!';
+                        ret_phonenumber := var_phonenumber;
+                        ret_otp := generated_otp;
+    				END IF;
+				END IF;
+			END IF;
+END;
+$BODY$;
+
+
+CREATE OR REPLACE FUNCTION public.validateotp(
+	var_userid uuid,
+	var_otp character varying,
+	OUT ret_userid uuid,
+	OUT ret_successvalidation boolean,
+	OUT ret_message character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+IF EXISTS (SELECT 1 FROM public.UserValidation u WHERE u.userid = var_userid AND u.otp = var_otp AND u.validationstatus = 'OTP Sent') THEN
+    UPDATE public.UserValidation
+   	SET validationstatus = 'OTP Validated', modifieddatetime = CURRENT_TIMESTAMP 
+    WHERE var_userid = userid AND isdeleted = false;
+	ret_userid = var_userid;
+    ret_successvalidation = true;
+    ret_message = 'Your account has been successfully verified. You have been granted 3 free advertisements';
+    ELSE
+	    ret_userid = '00000000-0000-0000-0000-000000000000';
+        ret_successvalidation = false;
+		ret_message = 'The OTP you entered is incorrect.';
+    END IF;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.grantads(
+	var_userid uuid,
+	OUT ret_successvalidation boolean,
+	OUT ret_message character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+IF EXISTS (SELECT 1 FROM public.UserValidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Validated') THEN
+    UPDATE public.User
+   	SET advertisementsremaining = advertisementsremaining + 3, modifieddatetime = CURRENT_TIMESTAMP 
+    WHERE var_userid = id AND isdeleted = false;
+    ret_successvalidation = true;
+    ret_message = 'Your account has been successfully verified. You have been granted 3 free advertisements.';
+    ELSE
+        ret_successvalidation = false;
+		ret_message = 'The OTP you entered is incorrect.';
+    END IF;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.newotp(
+	var_userid uuid,
+	var_phonenumber character varying,
+	OUT ret_sent boolean,
+	OUT ret_message character varying,
+	OUT ret_phonenumber character varying,
+	OUT ret_otp character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+DECLARE
+    id uuid := uuid_generate_v4();
+    generated_otp double precision = array_to_string(ARRAY(SELECT chr((48 + round(random() * 9)) :: integer) 
+FROM generate_series(1,5)), '');
+BEGIN
+	IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Expired') THEN
+		ret_sent := false;
+		ret_message := 'An OTP has already been sent again. Please wait a few minutes as a delay can sometimes occur.';
+        ret_phonenumber := '00000';
+        ret_otp := 'None';
+			ELSE IF EXISTS (SELECT 1 FROM public.uservalidation u WHERE u.userid = var_userid AND u.phonenumber = var_phonenumber AND u.validationstatus = 'OTP Validated') THEN
+				ret_sent := false;
+		        ret_message := 'Your account has already been verified!';
+                ret_phonenumber := '0000';
+                ret_otp := 'None';
+					ELSE
+						UPDATE public.UserValidation
+  					 	SET validationstatus = 'OTP Expired', modifieddatetime = CURRENT_TIMESTAMP 
+    					WHERE userid = var_userid AND isdeleted = false AND validationstatus = 'OTP Sent';
+						INSERT INTO public.UserValidation(ID, UserID, PhoneNumber, OTP, SentDate, CreatedDateTime, IsDeleted, ModifiedDateTime)
+    					VALUES (id, var_userid, var_phonenumber, generated_otp ,CURRENT_TIMESTAMP , CURRENT_TIMESTAMP , 'false', CURRENT_TIMESTAMP);
+    					ret_sent := true;
+		                ret_message := 'A new OTP has successfully been sent to your phone!';
+                        ret_phonenumber := var_phonenumber;
+                        ret_otp := generated_otp;
+    				END IF;
+			END IF;
+END;
+$BODY$;
+
+CREATE OR REPLACE FUNCTION public.verifieduser(
+	var_userid uuid,
+	OUT ret_isverified boolean)
+    RETURNS boolean
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+IF EXISTS (SELECT 1 FROM public.UserValidation u WHERE u.userid = var_userid AND u.validationstatus = 'OTP Validated') THEN
+    ret_isverified = true;
+    ELSE
+        ret_isverified = false;
+    END IF;
+END;
+$BODY$;
 
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com','University of Pretoria');

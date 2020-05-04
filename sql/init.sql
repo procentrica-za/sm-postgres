@@ -2312,6 +2312,37 @@ IF EXISTS (SELECT 1 FROM public.UserValidation u WHERE u.userid = var_userid AND
 END;
 $BODY$;
 
+/* =====================================================
+===================== PURCHASE ADDS FUNCTION ===========
+=======================================================*/
+
+CREATE OR REPLACE FUNCTION public.purchaseads(
+	var_userid uuid,
+	var_ammount integer,
+	OUT ret_success boolean,
+	OUT ret_message character varying)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+IF EXISTS (SELECT 1 FROM public.user u WHERE u.id = var_userid) THEN
+    UPDATE public.User
+   	SET advertisementsremaining = advertisementsremaining + var_ammount, modifieddatetime = CURRENT_TIMESTAMP 
+    WHERE var_userid = id AND isdeleted = false;
+    ret_success = true;
+    ret_message = 'Success! Your account has been credited with advertisement tokens.';
+    ELSE
+        ret_success = false;
+		ret_message = 'Internal Error!';
+    END IF;
+END;
+$BODY$;
+
+
+
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com','University of Pretoria');
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za','University of Pretoria');

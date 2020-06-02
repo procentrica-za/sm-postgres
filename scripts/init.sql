@@ -2341,6 +2341,39 @@ END;
 $BODY$;
 
 
+/* =====================================================
+========== GET PASSWORD FOR WSO2 FUNCTION ==============
+=======================================================*/
+
+CREATE OR REPLACE FUNCTION public.getpassword(
+	var_email character varying,
+	OUT ret_varid uuid,
+	OUT ret_username character varying,
+	OUT ret_password character varying,
+	OUT ret_successget boolean)
+    RETURNS record
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+AS $BODY$
+BEGIN
+IF EXISTS (SELECT 1 FROM public.User u WHERE u.email = var_email AND u.isdeleted = false) THEN
+	SELECT u.id, u.username, u.password
+	INTO ret_varid, ret_username, ret_password
+    FROM public.User u
+    WHERE var_email = u.email AND u.isdeleted = false;
+	ret_successget = true;
+	ELSE
+        ret_varid = '00000000-0000-0000-0000-000000000000';
+        ret_username = 'none';
+		ret_password = 'none';
+        ret_successget = false; 
+    END IF;
+END;
+$BODY$;
+
+
 
 /* ---- Populating user table with default users. ---- */
 SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter65.s@gmail.com','University of Pretoria');

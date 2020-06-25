@@ -2380,6 +2380,8 @@ SELECT public.registeruser('Peter65', '123Piet!@#', 'Peter', 'Schmeical', 'peter
 SELECT public.registeruser('John12', 'D0main!', 'John', 'Smith', 'John@live.co.za','University of Pretoria');
 SELECT public.registeruser('Blairzee', '!Blairzee', 'Blaire', 'Baldwin', 'Blaire24@gmail.com','University of Pretoria');
 SELECT public.registeruser('JohanStemmet', '!stemmet', 'Johan', 'Stemmet', 'manie.gilliland@gmail.com','University of Pretoria');
+SELECT public.registeruser('Test', 'gcloud', 'Testing', 'gcloud', 'Sick.Corona@gmail.com','University of Pretoria');
+SELECT public.registeruser('Test2', 'gcloud2', 'Testing2', 'gcloud2', 'Sick2.Corona@gmail.com','University of Pretoria');
 /* ---- ACCOMODATION TYPES ---- */
 INSERT INTO public.AccomodationType(Code,Name,Description,CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('COM', 'Commune', 'A group of people living together and sharing kitchen, bathrooms with their own seperate bedrooms.', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);

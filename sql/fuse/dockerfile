@@ -1,3 +1,0 @@
-COPY gcsfuse.repo /etc/yum.repos.d/
-RUN dnf -y install gcsfuse
-RUN mkdir -p /etc/letsencrypt

@@ -2,24 +2,20 @@ FROM postgres
 COPY scripts/* /docker-entrypoint-initdb.d/
 COPY sql/* /sql/
 
-FROM golang:1.10.0-alpine AS gcsfuse
+FROM debian:stretch-slim
+ENV GCSFUSE_REPO gcsfuse-stretch
 
-RUN apk add --no-cache git
-ENV GOPATH /go
-RUN go get -u github.com/googlecloudplatform/gcsfuse
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    ca-certificates \
+    curl \
+    gnupg \
+  && echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" \
+    | tee /etc/apt/sources.list.d/gcsfuse.list \
+  && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - \
+  && apt-get update \
+  && apt-get install --yes gcsfuse \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 
-FROM nginx:alpine
-
-RUN apk add --no-cache ca-certificates fuse
-
-COPY --from=gcsfuse /go/bin/gcsfuse /usr/local/bin
-
-# Bucket files will be mounted here
-RUN mkdir -p /var/lib/postgresql/data
-
-# Or any other port you use in nginx.cong
-EXPOSE 3000
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["sleep", "3600"]
 
     

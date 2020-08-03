@@ -15,7 +15,7 @@ RUN apk add --no-cache ca-certificates fuse
 COPY --from=gcsfuse /go/bin/gcsfuse /usr/local/bin
 
 # Bucket files will be mounted here
-RUN mkdir -p /usr/share/nginx/bucket-data
+RUN mkdir -p /var/lib/postgresql/data
 
 # Or any other port you use in nginx.cong
 EXPOSE 3000

@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
   && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - \
   && apt-get update \
   && apt-get install --yes gcsfuse \
-  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && mkdir /var/lib/postgresql/data
 
 CMD ["sleep", "3600"]
 

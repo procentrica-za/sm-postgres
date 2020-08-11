@@ -909,7 +909,7 @@ CREATE OR REPLACE FUNCTION public.gettextbookadvertisements(
 	var_edition character varying,
 	var_quality character varying,
 	var_author character varying)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying, institutionname character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying, institutionname character varying, row_number bigint)
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -918,7 +918,7 @@ CREATE OR REPLACE FUNCTION public.gettextbookadvertisements(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode, i.name
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode, i.name, ROW_NUMBER () OVER (ORDER BY a.createddatetime)
     FROM public.Advertisement as a
 	INNER JOIN public.Textbook as t 
 	ON a.entityid = t.id
@@ -926,8 +926,8 @@ BEGIN
 	ON m.id = t.moduleid AND m.isdeleted = false
 	INNER JOIN public.Institution as i
 	ON i.id = a.InstitutionID
-	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.name LIKE var_name AND t.edition LIKE var_edition AND t.quality LIKE var_quality AND t.author LIKE var_author AND m.ModuleCode LIKE var_modulecode
-	LIMIT var_limit;
+	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.name LIKE var_name AND t.edition LIKE var_edition AND t.quality LIKE var_quality AND t.author LIKE var_author AND m.ModuleCode LIKE var_modulecode;
+
 END;
 $BODY$;
 
@@ -946,7 +946,7 @@ CREATE OR REPLACE FUNCTION public.gettutoradvertisements(
 	var_terms character varying,
     var_modulecode character varying
 	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying, institutionname character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying, institutionname character varying, row_number bigint) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -956,7 +956,7 @@ CREATE OR REPLACE FUNCTION public.gettutoradvertisements(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode, i.name
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode, i.name, ROW_NUMBER () OVER (ORDER BY a.createddatetime)
     FROM public.Advertisement as a
 	INNER JOIN public.Tutor as t 
 	ON a.entityid = t.id
@@ -964,8 +964,8 @@ BEGIN
 	ON m.id = t.moduleid AND m.isdeleted = false
     INNER JOIN public.Institution as i
 	ON i.id = a.InstitutionID
-	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.subject LIKE var_subject AND t.yearcompleted LIKE var_yearCompleted AND t.venue LIKE var_venue AND CAST(t.notesincluded AS character varying) LIKE var_notesIncluded AND t.terms LIKE var_terms AND m.ModuleCode LIKE var_modulecode
-	LIMIT var_limit;
+	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND t.subject LIKE var_subject AND t.yearcompleted LIKE var_yearCompleted AND t.venue LIKE var_venue AND CAST(t.notesincluded AS character varying) LIKE var_notesIncluded AND t.terms LIKE var_terms AND m.ModuleCode LIKE var_modulecode;
+
 END;
 $BODY$;
 
@@ -981,7 +981,7 @@ CREATE OR REPLACE FUNCTION public.getnoteadvertisements(
     var_maxprice numeric,
     var_modulecode character varying
 	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying, institutionname character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying, institutionname character varying, row_number bigint) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -991,7 +991,7 @@ CREATE OR REPLACE FUNCTION public.getnoteadvertisements(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode, i.name
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode, i.name, ROW_NUMBER () OVER (ORDER BY a.createddatetime)
     FROM public.Advertisement as a
 	INNER JOIN public.Notes as n 
 	ON a.entityid = n.id
@@ -999,8 +999,8 @@ BEGIN
 	ON m.id = n.moduleid AND m.isdeleted = false
     INNER JOIN public.Institution as i
 	ON i.id = a.InstitutionID
-	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND m.ModuleCode LIKE var_modulecode
-	LIMIT var_limit;
+	WHERE i.name LIKE var_institution AND var_maxprice >= a.price AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false AND m.ModuleCode LIKE var_modulecode;
+
 END;
 $BODY$;
 
@@ -1015,7 +1015,7 @@ CREATE OR REPLACE FUNCTION public.getaccomodationadvertisements(
     var_location character varying,
     var_distancetocampus numeric
 	)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institutionname character varying) 
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institutionname character varying, row_number bigint) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1025,14 +1025,14 @@ CREATE OR REPLACE FUNCTION public.getaccomodationadvertisements(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT ad.id, ad.userid, ad.isselling, ad.advertisementtype, ad.price, ad.description, ac.id, ac.accomodationtypecode, ac.location, ac.distancetocampus, i.name
+	SELECT ad.id, ad.userid, ad.isselling, ad.advertisementtype, ad.price, ad.description, ac.id, ac.accomodationtypecode, ac.location, ac.distancetocampus, i.name, ROW_NUMBER () OVER (ORDER BY ad.createddatetime)
     FROM public.Advertisement as ad
 	INNER JOIN public.Accomodation as ac 
 	ON ad.entityid = ac.id
 	INNER JOIN public.Institution as i
 	ON i.id = ac.institutionid AND i.isdeleted = false
-	WHERE var_maxprice >= ad.price AND 'ACD' = ad.advertisementtype AND var_isselling = ad.isselling AND ad.isdeleted = false AND i.name LIKE var_institutionname AND ac.accomodationtypecode LIKE var_accomodationcode AND ac.location LIKE var_location AND ac.distancetocampus <= var_distancetocampus
-	LIMIT var_limit;
+	WHERE var_maxprice >= ad.price AND 'ACD' = ad.advertisementtype AND var_isselling = ad.isselling AND ad.isdeleted = false AND i.name LIKE var_institutionname AND ac.accomodationtypecode LIKE var_accomodationcode AND ac.location LIKE var_location AND ac.distancetocampus <= var_distancetocampus;
+
 END;
 $BODY$;
 
@@ -2467,8 +2467,6 @@ VALUES('46bd986a-5f7d-4b4a-b972-08518315143b','69ba5241-2059-40b0-b02a-7d983d01b
 INSERT INTO public.Textbook(ID, ModuleID, Name, Edition, Quality, Author, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES('64a4c6c0-bf8e-4728-a650-579003bc6857','69ba5241-2059-40b0-b02a-7d983d01b6e5', 'Calculus Follow-up', '3', 'New' , 'George Shabangu', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
-
-
 /* ---- TUTORS ---- */ 
 INSERT INTO public.Tutor(ID, Subject, YearCompleted, ModuleID, Venue, NotesIncluded, Terms, CreatedDateTime,IsDeleted,ModifiedDateTime)
 VALUES ('0339d90d-bb7b-4054-905a-15feb960f53e', 'Business', '2017', '2e901148-ae96-4158-a92a-3c6f371d1ea1', 'Campus', true, '5 Lessons', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -2547,6 +2545,53 @@ INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,Entit
 VALUES ('a6feb6c0-9349-41f7-ac8e-96e0e0c28148', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','Great condition, honest sale. Message me for more details. Only cash accepted', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('d1701153-2ca7-4f6d-a517-79bbe46faaee', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 1', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('6bda98d5-01a2-4098-96b6-f49475f724ac', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 2', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('723e75e6-e317-49a7-bacf-5fda3d765fa0', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 3', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('c8dd97bb-fa40-49e5-a13f-ef29d5554bef', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 4', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('79a089ca-5ed2-4ef8-86af-9d8204db6d54', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 5', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('9c68b58d-64a3-4b76-8349-b7e4e9fc602f', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 6', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('9b5035d6-e047-4430-a4a6-b20a4d451f2e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 7', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('ed55f7fc-88e0-4ec2-98da-430f427527c9', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 8', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('0f3d090d-5484-4942-b593-b82ed83f423a', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 9', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('310c8d00-76d3-4af0-a4f9-4c910350f7e1', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 10', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('d7a9b8cd-f7b4-47eb-a8b8-120c161c9570', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 11', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('dfe1ba1f-3ee8-46bd-90e6-f9fa6b98b491', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 12', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('0fe51967-6315-4a08-ab36-87c87c557704', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 13', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('2f210eeb-cdd8-438f-a647-f6c2410ff9c0', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 14', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('7769fe39-708e-4f99-a60c-a63c149a3b0e', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 15', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('27bea716-9193-405b-8c07-8856816656e6', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 16', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('3952fc76-e7a6-4b45-9ba2-ccc2e79effcd', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 17', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('8d315d91-1c26-4a19-a223-2d42cebc1f62', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 18', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('0af465d3-6d5d-4b83-aa16-f00934228992', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 19', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('cd7aec81-bf24-4baf-b1d7-2e11cb02edba', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', false,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 20', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('3410f8ca-cbfd-45f9-aca9-6942a176827b', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TXB', 'c05d560b-1ee2-4077-b53c-4c4bea5865cd', '765','TEST Indexing / Limits 21', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+
+
+
+
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('06abf31a-3165-48ad-87b3-75ff2a6c0225', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','Business management will be explained and simplified! contact me for details.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -2560,6 +2605,28 @@ INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,Entit
 VALUES ('f17a3666-f7fb-468d-bd2b-b8ad111fc29b', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'TUT', 'ddbb68c2-e65c-44dd-a8f1-7c9c0a0a4979', '150','I was top of my class, we can make that happen for you too, together. Contact me now!', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('e8a201ce-e4ad-4d9a-b10f-52080ed57387', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 1', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('9c858882-b055-4c05-a0da-e3b9ffd20e7d', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 2', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('f9291ff2-d80e-4c11-8810-0b61cc0347f6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 3', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('14ed4cc5-4ad8-46c0-9ba7-accb56aa6f64', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 4', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('78e9acc2-5833-48af-bfda-9a40824ea802', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 5', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('1ffeb6a1-310c-4ffe-bbb7-d1c4198b1a4b', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 6', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('df51c1a2-f6d4-4cbd-b7f4-9b48707655e1', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 7', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('fc03b5a3-96b3-4652-8c80-61ea2d5f08a9', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 8', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('7b632f36-d8ab-4a9b-95bb-bfecb378604c', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 9', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('4ea732c4-1651-4cf2-8814-d4b3c2902006', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'TUT', '0339d90d-bb7b-4054-905a-15feb960f53e', '200','TEST Indexing / Limits 10', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+
+
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('81dc2379-aeb9-4279-865b-bdb46edc5db5', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','Cozy Hatfield accomodation, right by the gautrain.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('4dbe73b4-e811-4a5e-91e0-331d14942067', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', 'd4b1ef8d-cac8-4793-96b9-51f1024affc7', '7600','This Brooklyn Commune will make your life easy, on the doorstep on the university.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
@@ -2571,8 +2638,29 @@ INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,Entit
 VALUES ('c9b1d5fa-df6b-4c07-93e6-f5ccaf658501', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '6300','Situated in the heart of Hatfield, UP is a stone throw away.', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
-VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','These First year OBS notes are all you will need!', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+VALUES ('7194a002-99d3-4ea8-837d-8e15588fecaf', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 1', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('34795edc-ba31-4374-866b-55e9a5716ce8', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 2', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('71e2e40f-3f9c-4b42-89c7-3cc3257691a1', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 3', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('3ab9756d-d613-4c8c-9e93-7de76b687440', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 4', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('fb2859de-2fd0-4e2e-a1a3-cd3a975ffcaf', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 5', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('be1e813f-6684-4df2-882c-abbb97c8ac64', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 6', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('61161ff6-7720-463e-af6f-e67e2ce2a34c', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 7', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('8daa5e73-043e-4e89-9cf9-631e896f5046', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 8', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('aa100940-d627-4caf-937f-337f9122dc60', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 9', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('b9014bf9-a137-4201-859f-6a0f6d186745', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'ACD', '1193447d-5dd6-493f-8b0c-846c88f4e92c', '4500','TEST Indexing / Limits 10', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
+
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('76151522-5437-4fe7-86b9-3dfa11d43cb6', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','These First year OBS notes are all you will need!', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('d3b01bb0-e7b0-4a28-a2af-efda603c78db', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '150','Selling my amazing notes', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
@@ -2582,10 +2670,26 @@ VALUES ('ef3c2429-8a0b-4af7-bc3f-ce8018c475d5', '56c27ab0-eed7-4aa5-8b0a-e4082c8
 INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
 VALUES ('d50f09da-eeea-4732-a600-479f3ea67477', '56c27ab0-eed7-4aa5-8b0a-e4082c83c3b7', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '250','These notes are guaranteed to make you pass', 'fb901315-d971-4347-880b-bc8c6292386f', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
-
-
-
-
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('5f4ba9c0-6e17-463e-ac2e-b5a34844ae43', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 1', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('64910dfc-ca50-463e-ad3e-b33100647bea', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 2', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('2d86c521-c747-4db4-966d-9fbdd71e94e2', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 3', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('de7058e7-459b-4ed9-804a-d365a90900df', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 4', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('3bf7e561-40cf-4f29-b5fd-8da5ef97c7a9', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 5', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('5059d225-abf7-42bd-ada9-0ef4ed58eb77', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 6', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('b796bcbc-61be-4289-9803-a4c0b41c21a1', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 7', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('4463efea-7dae-466f-9396-01556c0ef4ff', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 8', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('0f4e4411-08f3-4d32-bbcf-25a7d58024af', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', true,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 9', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
+INSERT INTO public.Advertisement (ID, UserID, IsSelling, AdvertisementType,EntityID, Price, Description, InstitutionID, CreatedDateTime, IsDeleted, ModifiedDateTime)
+VALUES ('199d3853-bf47-48f6-96c9-6b53f246303f', '7bb9d62d-c3fa-4e63-9f07-061f6226cebb', false,'NTS', 'ff3de7fd-1c40-4051-88d3-1c6b14ec894a', '450','TEST Indexing / Limits 10', '9d68ff9f-01a0-476e-ac3a-fc6463127ff4', CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP);
 
 
 --INSERT DEFAULT IMAGES

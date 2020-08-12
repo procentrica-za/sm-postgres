@@ -1040,10 +1040,8 @@ $BODY$;
 /* ---- Get Textbook Advertisement by User ID Function ---- */
 
 CREATE OR REPLACE FUNCTION public.gettextbookadvertisementsbyuserid(
-	var_userid uuid,
-	var_limit numeric,
-	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying, institutionname character varying ) 
+	var_userid uuid)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, textbookid uuid, textbookname character varying, edition character varying, quality character varying, author character varying, modulecode character varying, institutionname character varying,row_number bigint ) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1052,7 +1050,7 @@ CREATE OR REPLACE FUNCTION public.gettextbookadvertisementsbyuserid(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-    SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode, i.name
+    SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.name, t.edition, t.quality, t.author, m.modulecode, i.name,  ROW_NUMBER () OVER (ORDER BY a.createddatetime)
     FROM public.Advertisement as a
 	INNER JOIN public.Textbook as t 
 	ON a.entityid = t.id
@@ -1060,17 +1058,14 @@ BEGIN
 	ON m.id = t.moduleid AND m.isdeleted = false
     INNER JOIN public.Institution as i
 	ON i.id = a.InstitutionID
-	WHERE var_userid = a.userid AND 'TXB' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false 
-	LIMIT var_limit;
+	WHERE var_userid = a.userid AND 'TXB' = a.advertisementtype AND a.isdeleted = false;
 END;
 $BODY$;
 
 /* ---- Get Accomodation Advertisement by User ID Function ---- */
 CREATE OR REPLACE FUNCTION public.getaccomodationadvertisementsbyuserid(
-	var_userid uuid,
-	var_limit numeric,
-	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institution character varying) 
+	var_userid uuid)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, accomodationid uuid, accomodationtypecode character varying, location character varying, distancetocampus numeric, institution character varying, row_number bigint) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1079,23 +1074,20 @@ CREATE OR REPLACE FUNCTION public.getaccomodationadvertisementsbyuserid(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT ad.id, ad.userid, ad.isselling, ad.advertisementtype, ad.price, ad.description, ac.id, ac.accomodationtypecode, ac.location, ac.distancetocampus, i.name
+	SELECT ad.id, ad.userid, ad.isselling, ad.advertisementtype, ad.price, ad.description, ac.id, ac.accomodationtypecode, ac.location, ac.distancetocampus, i.name, ROW_NUMBER () OVER (ORDER BY ad.createddatetime)
     FROM public.Advertisement as ad
 	INNER JOIN public.Accomodation as ac 
 	ON ad.entityid = ac.id
 	INNER JOIN public.Institution as i
 	ON i.id = ac.institutionid AND i.isdeleted = false
-	WHERE var_userid = ad.userid AND 'ACD' = ad.advertisementtype AND var_isselling = ad.isselling AND ad.isdeleted = false
-	LIMIT var_limit;
+	WHERE var_userid = ad.userid AND 'ACD' = ad.advertisementtype AND ad.isdeleted = false;
 END;
 $BODY$;
 
 /* ---- Get Tutor Advertisement by User ID Function ---- */
 CREATE OR REPLACE FUNCTION public.gettutoradvertisementsbyuserid(
-	var_userid uuid,
-	var_limit numeric,
-	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying, institutionname character varying) 
+	var_userid uuid)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, tutorid uuid, subject character varying, yearcompleted character varying, venue character varying, notesincluded boolean, terms character varying, modulecode character varying, institutionname character varying, row_number bigint) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1104,7 +1096,7 @@ CREATE OR REPLACE FUNCTION public.gettutoradvertisementsbyuserid(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode, i.name
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, t.id, t.subject, t.yearcompleted, t.venue, t.notesincluded, t.terms, m.modulecode, i.name, ROW_NUMBER () OVER (ORDER BY a.createddatetime)
     FROM public.Advertisement as a
 	INNER JOIN public.Tutor as t 
 	ON a.entityid = t.id
@@ -1112,17 +1104,14 @@ BEGIN
 	ON m.id = t.moduleid AND m.isdeleted = false
     INNER JOIN public.Institution as i
 	ON i.id = a.InstitutionID
-	WHERE var_userid = a.userid AND 'TUT' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
-	LIMIT var_limit;
+	WHERE var_userid = a.userid AND 'TUT' = a.advertisementtype AND a.isdeleted = false;
 END;
 $BODY$;
 
 /* ---- Get Note Advertisement by User ID Function ---- */
 CREATE OR REPLACE FUNCTION public.getnoteadvertisementsbyuserid(
-	var_userid uuid,
-	var_limit numeric,
-	var_isselling boolean)
-    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying, institutionname character varying) 
+	var_userid uuid)
+    RETURNS TABLE(advertisementid uuid, userid uuid, isselling boolean, advertisementtype character varying, price numeric, description character varying, noteid uuid, modulecode character varying, institutionname character varying, row_number bigint) 
     LANGUAGE 'plpgsql'
 
     COST 100
@@ -1131,7 +1120,7 @@ CREATE OR REPLACE FUNCTION public.getnoteadvertisementsbyuserid(
 AS $BODY$
 BEGIN
 	RETURN QUERY
-	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode, i.name
+	SELECT a.id, a.userid, a.isselling, a.advertisementtype, a.price, a.description, n.id, m.modulecode, i.name, ROW_NUMBER () OVER (ORDER BY a.createddatetime)
     FROM public.Advertisement as a
 	INNER JOIN public.Notes as n 
 	ON a.entityid = n.id
@@ -1139,8 +1128,7 @@ BEGIN
 	ON m.id = n.moduleid AND m.isdeleted = false
     INNER JOIN public.Institution as i
 	ON i.id = a.InstitutionID
-	WHERE var_userid = a.userid AND 'NTS' = a.advertisementtype AND var_isselling = a.isselling AND a.isdeleted = false
-	LIMIT var_limit;
+	WHERE var_userid = a.userid AND 'NTS' = a.advertisementtype AND a.isdeleted = false;
 END;
 $BODY$;
 /* ---- Get all advertisements Function ---- */
